@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include "pico/types.h"   //For uint
+
 #ifdef __cplusplus
 extern "C" {
 #endif

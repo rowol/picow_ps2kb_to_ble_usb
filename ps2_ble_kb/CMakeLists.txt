@@ -17,6 +17,8 @@ project(${PROJECT} C CXX ASM)
 
 pico_sdk_init()
 
+add_subdirectory(ps2kbd-lib)
+
 add_executable(${PROJECT})
 target_sources(${PROJECT} PRIVATE
 	hog_keyboard_demo.c
@@ -36,6 +38,7 @@ target_link_libraries(${PROJECT} PRIVATE
 	pico_btstack_cyw43
 	pico_cyw43_arch_none
 	pico_stdlib
+	ps2kbd-lib
 )
 
 pico_btstack_make_gatt_header(hog_keyboard_demo PRIVATE "${CMAKE_CURRENT_LIST_DIR}/hog_keyboard_demo.gatt")

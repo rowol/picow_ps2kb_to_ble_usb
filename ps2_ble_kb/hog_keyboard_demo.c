@@ -56,6 +56,9 @@
 #include "ble/gatt-service/device_information_service_server.h"
 #include "ble/gatt-service/hids_device.h"
 
+#include "ps2kbd.h"
+
+
 // from USB HID Specification 1.1, Appendix B.1
 const uint8_t hid_descriptor_keyboard_boot_mode[] = {
 
@@ -335,11 +338,9 @@ static void stdin_process(char character){
 
 // On embedded systems, send constant demo text with fixed period
 
-#define TYPING_PERIOD_MS 50
-static const char * demo_text = "\n\nHello World!\n\nThis is the BTstack HID Keyboard Demo running on an Embedded Device.\n\n";
+#define PS2_POLLING_PERIOD_MS 10
 
-static int demo_pos;
-static btstack_timer_source_t typing_timer;
+static btstack_timer_source_t ps2_polling_timer;
 
 static int send_keycode;
 static int send_modifier;
@@ -355,43 +356,53 @@ static void typing_can_send_now(void){
    send_report(send_modifier, send_keycode);
 }
 
-static void typing_timer_handler(btstack_timer_source_t * ts){
 
+
+//RSW: this runs every 10ms to check for a keypress
+static void ps2_poll_timer_handler(btstack_timer_source_t * ts)
+{
     if (send_keyup){
         // just send key up
         send_keyup = 0;
         send_key(0, 0);
-    } else {
-        // get next character
-        uint8_t character = demo_text[demo_pos++];
-        if (demo_text[demo_pos] == 0){
-            demo_pos = 0;
-        }
+    } 
+    else {
+        if (kbd_ready()) {
+            uint8_t character = kbd_getc();
 
-        // get keycode and send
-        uint8_t modifier;
-        uint8_t keycode;
-        int found = keycode_and_modifer_us_for_character(character, &keycode, &modifier);
-        if (found){
-            printf("%c\n", character);
-            send_key(modifier, keycode);
-            send_keyup = 1;
+            // get keycode and send
+            uint8_t modifier;
+            uint8_t keycode;
+            int found = keycode_and_modifer_us_for_character(character, &keycode, &modifier);
+            if (found){
+                printf("%02X ", character);    //TESTING
+                send_key(modifier, keycode);
+                send_keyup = 1;
+            }
         }
     }
 
     // set next timer
-    btstack_run_loop_set_timer(ts, TYPING_PERIOD_MS);
+    btstack_run_loop_set_timer(ts, PS2_POLLING_PERIOD_MS);
     btstack_run_loop_add_timer(ts);
 }
 
-static void hid_embedded_start_typing(void){
-    printf("Start typing..\n");
 
-    demo_pos = 0;
+
+static void start_ps2_polling(void)
+{
+    static bool bPolling = false;
+
+    if (bPolling)    //Safety check, if already polling, don't start another timer
+       return; 
+
+    printf("Start polling..\n");
+
     // set one-shot timer
-    typing_timer.process = &typing_timer_handler;
-    btstack_run_loop_set_timer(&typing_timer, TYPING_PERIOD_MS);
-    btstack_run_loop_add_timer(&typing_timer);
+    ps2_polling_timer.process = &ps2_poll_timer_handler;
+    btstack_run_loop_set_timer(&ps2_polling_timer, PS2_POLLING_PERIOD_MS);
+    btstack_run_loop_add_timer(&ps2_polling_timer);
+    bPolling = true;
 }
 
 #endif
@@ -420,12 +431,10 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
             break;
         case HCI_EVENT_HIDS_META:
             switch (hci_event_hids_meta_get_subevent_code(packet)){
-                case HIDS_SUBEVENT_INPUT_REPORT_ENABLE:
+                case HIDS_SUBEVENT_INPUT_REPORT_ENABLE:    //RSW: looks like this sometimes comes in twice (?)    
                     con_handle = hids_subevent_input_report_enable_get_con_handle(packet);
                     printf("Report Characteristic Subscribed %u\n", hids_subevent_input_report_enable_get_enable(packet));
-#ifndef HAVE_BTSTACK_STDIN
-                    hid_embedded_start_typing();
-#endif
+                    start_ps2_polling();
                     break;
                 case HIDS_SUBEVENT_BOOT_KEYBOARD_INPUT_REPORT_ENABLE:
                     con_handle = hids_subevent_boot_keyboard_input_report_enable_get_con_handle(packet);
@@ -448,8 +457,8 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
     }
 }
 
-int btstack_main(void);
-int btstack_main(void)
+
+int btstack_main(int argc, const char * argv[])
 {
     le_keyboard_setup();
 
