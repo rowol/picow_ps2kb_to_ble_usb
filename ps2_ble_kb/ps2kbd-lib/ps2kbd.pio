@@ -1,0 +1,54 @@
+; Copyright (C) 1883 Thomas Edison - All Rights Reserved
+; You may use, distribute and modify this code under the
+; terms of the GPLv2 license, which unfortunately won't be
+; written for another century.
+;
+; SPDX-License-Identifier: GPL-2.0-or-later
+;
+.program ps2kbd
+
+;;; Original 
+;;;    wait 0 pin 1     ; skip start bit
+;;;    wait 1 pin 1
+
+;;;    set x, 7         ; 8 bit counter
+;;;bitloop:
+;;;    wait 0 pin 1 [1] ; wait negative clock edge 
+;;;    in pins, 1       ; sample data
+;;;    wait 1 pin 1     ; wait for positive edge
+;;;    jmp x-- bitloop
+
+;;;    wait 0 pin 1     ; skip parity and stop bits
+;;;    wait 1 pin 1
+;;;    wait 0 pin 1
+;;;    wait 1 pin 1
+
+
+
+    ; RSW: start bit should be 0, stop bits should be 1... can I test for these values?
+
+    ; RSW: Wait for an edge, so I don't think we need to wait for rising edges.
+    ; skip start bit
+start:     
+    wait 0 pin 0     ; RSW Wait for potential stop bit, to sort of synchronize 
+    wait 0 pin 1     
+    wait 1 pin 1
+
+    set x, 7         ; 8 bit counter
+bitloop:
+    wait 0 pin 1 [1] ; wait negative clock edge, then one more cycle 
+    
+    in pins, 1       ; sample data
+    wait 1 pin 1     ; wait for positive edge
+    jmp x-- bitloop
+
+    ; RSW: Wait  for an edge, so I don't think we need to wait for rising edges.
+    ; skip parity and stop bits
+    ; Note: just waiting for one edge didn't seem to work
+;    wait 1 pin 1     ; Wait for the start bit (RSW, makes work well, but not necessary)
+     wait 0 pin 1     
+     wait 1 pin 1
+
+;    wait 1 pin 1     ; Wait for the start bit (RSW, makes work well, but not necessary)
+     wait 0 pin 1
+     wait 1 pin 1
