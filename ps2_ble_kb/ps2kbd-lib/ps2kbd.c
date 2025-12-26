@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "ps2kbd.pio.h"
-
 #include "ps2kbd.h"
 
 #include "hardware/clocks.h"
@@ -50,10 +49,12 @@ void kbd_init(uint pio, uint gpio) {
 
 // clang-format off
 
-#define BS 0x8
+#define BS  0x8  
 #define TAB 0x9
-#define LF 0xA
+#define LF  0xA
+#define CR  0xD
 #define ESC 0x1B
+#define DEL 0x7F
 
 // Upper-Case ASCII codes by keyboard-code index, 16 elements per row
 static const uint8_t lower[] = {
@@ -62,9 +63,9 @@ static const uint8_t lower[] = {
     0,  'c', 'x', 'd', 'e', '4', '3', 0,  0,  ' ', 'v', 'f', 't', 'r', '5', 0,
     0,  'n', 'b', 'h', 'g', 'y', '6', 0,  0,  0,   'm', 'j', 'u', '7', '8', 0,
     0,  ',', 'k', 'i', 'o', '0', '9', 0,  0,  '.', '/', 'l', ';', 'p', '-', 0,
-    0,  0,   '\'',0,   '[', '=', 0,   0,  0,  0,   LF,  ']', 0,   '\\',0,   0,
+    0,  0,   '\'',0,   '[', '=', 0,   0,  0,  0,   CR,  ']', 0,   '\\',0,   0,
     0,  0,   0,   0,   0,   0,   BS,  0,  0,  0,   0,   0,   0,   0,   0,   0,
-    0,  0,   0,   0,   0,   0,   ESC, 0,  0,  0,   0,   0,   0,   0,   0,   0};
+    0,  DEL, 0,   0,   0,   0,   ESC, 0,  0,  0,   0,   0,   0,   0,   0,   0};
 
 // Upper-Case ASCII codes by keyboard-code index
 static const uint8_t upper[] = {
@@ -73,9 +74,9 @@ static const uint8_t upper[] = {
     0,  'C', 'X', 'D', 'E', '$', '#', 0,  0,  ' ', 'V', 'F', 'T', 'R', '%', 0,
     0,  'N', 'B', 'H', 'G', 'Y', '^', 0,  0,  0,   'M', 'J', 'U', '&', '*', 0,
     0,  '<', 'K', 'I', 'O', ')', '(', 0,  0,  '>', '?', 'L', ':', 'P', '_', 0,
-    0,  0,   '"', 0,   '{', '+', 0,   0,  0,  0,   LF,  '}', 0,   '|', 0,   0,
+    0,  0,   '"', 0,   '{', '+', 0,   0,  0,  0,   CR,  '}', 0,   '|', 0,   0,
     0,  0,   0,   0,   0,   0,   BS,  0,  0,  0,   0,   0,   0,   0,   0,   0,
-    0,  0,   0,   0,   0,   0,   ESC, 0,  0,  0,   0,   0,   0,   0,   0,   0};
+    0,  DEL, 0,   0,   0,   0,   ESC, 0,  0,  0,   0,   0,   0,   0,   0,   0};
 // clang-format on
 
 static uint8_t release; // Flag indicates the release of a key
@@ -103,8 +104,11 @@ int __attribute__((noinline)) kbd_ready(void) {
         break;
     default:
         // no case applies
-        if (!release)                              // If no key-release detected yet
-            ascii = (shift ? upper : lower)[code]; // Get ASCII value by case
+        if (!release) {                            // If no key-release detected yet
+            if (code < sizeof(upper)/sizeof(upper[0])) {   //Prevent lookups beyond table end
+                ascii = (shift ? upper : lower)[code]; // Get ASCII value by case
+            }
+        }
         release = 0;
         break;
     }

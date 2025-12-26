@@ -116,10 +116,11 @@ const uint8_t hid_descriptor_keyboard_boot_mode[] = {
 
 //
 #define CHAR_ILLEGAL     0xff
-#define CHAR_RETURN     '\n'
+#define CHAR_RETURN     '\r'
 #define CHAR_ESCAPE      27
 #define CHAR_TAB         '\t'
-#define CHAR_BACKSPACE   0x7f
+#define CHAR_BACKSPACE   0x08
+#define CHAR_DEL         0x7f
 
 // Simplified US Keyboard with Shift modifier
 
@@ -138,7 +139,7 @@ static const uint8_t keytable_us_none [] = {
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 61-64 */
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 65-68 */
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 69-72 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 73-76 */
+    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_DEL,                 /* 73-76 */
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 77-80 */
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 81-84 */
     '*', '-', '+', '\n', '1', '2', '3', '4', '5',                       /* 85-97 */
@@ -157,7 +158,7 @@ static const uint8_t keytable_us_shift[] = {
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 61-64 */
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 65-68 */
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 69-72 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 73-76 */
+    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_DEL,                 /* 73-76 */
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 77-80 */
     CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 81-84 */
     '*', '-', '+', '\n', '1', '2', '3', '4', '5',                       /* 85-97 */
@@ -375,8 +376,8 @@ static void ps2_poll_timer_handler(btstack_timer_source_t * ts)
             uint8_t keycode;
             int found = keycode_and_modifer_us_for_character(character, &keycode, &modifier);
             if (found){
-                printf("%02X ", character);    //TESTING
                 send_key(modifier, keycode);
+                printf("send_key: modifier:%02X\tkeycode:%02X\n", modifier, keycode);    //TESTING
                 send_keyup = 1;
             }
         }
