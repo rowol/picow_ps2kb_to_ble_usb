@@ -439,18 +439,9 @@ void ps2_task(void)
    }
 }
 
-uint8_t ps2_get_modifiers(void) {
-    return g_modifiers;
-}
 
-const uint8_t* ps2_get_keys(void) {
-    return g_keys;
-}
 
-bool ps2_state_changed(void) {
-    return g_state_changed;
-}
-
-void ps2_clear_changed(void) {
-    g_state_changed = false;
-}
+uint8_t ps2_get_modifiers(void)   {return g_modifiers;}
+const uint8_t* ps2_get_keys(void) {return g_keys;}
+bool ps2_state_changed(void)      {return g_state_changed;}
+void ps2_clear_changed(void)      {g_state_changed = false;}
