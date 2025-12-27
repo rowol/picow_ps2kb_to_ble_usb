@@ -140,6 +140,10 @@ const uint8_t adv_data[] = {
 };
 const uint8_t adv_data_len = sizeof(adv_data);
 
+
+#define array_count(x)  (sizeof(x)/sizeof(x[0]))
+
+
 static void le_keyboard_setup(void){
 
     l2cap_init();
@@ -189,7 +193,7 @@ static void le_keyboard_setup(void){
 static void send_report(uint8_t modifier, const uint8_t* keycodes){
     //RSW HACK, should memcpy keycodes instead 
     uint8_t report[] = {modifier, 0, keycodes[0], 0, 0, 0, 0, 0};  //Keycode 0 just included as a marker
-    memcpy(&report[2], keycodes, 6);
+    memcpy(&report[2], keycodes, REPORT_KEYS_MAX);
     switch (protocol_mode){
         case 0:
             hids_device_send_boot_keyboard_input_report(con_handle, report, sizeof(report));
@@ -211,7 +215,7 @@ static void send_report(uint8_t modifier, const uint8_t* keycodes){
 
 static btstack_timer_source_t ps2_polling_timer;
 
-static uint8_t send_keycodes[6];
+static uint8_t send_keycodes[REPORT_KEYS_MAX];
 static uint8_t send_modifier;
 
 static void send_key(uint8_t modifier, const uint8_t* keycodes){

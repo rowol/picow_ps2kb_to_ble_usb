@@ -14,6 +14,8 @@
 #define PS2_CLOCK_PIN  16
 #define PS2_DATA_PIN   17
 
+#define REPORT_KEYS_MAX 6   //Number of keys in BLE send_report (padded)
+
 // Initialize PS/2 interface (GPIO pins with pull-ups)
 void ps2_init(void);
 

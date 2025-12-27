@@ -280,17 +280,20 @@ static const uint8_t extended_scancode_to_hid[256] = {
 // Global Keyboard State
 //--------------------------------------------------------------------+
 
-static uint8_t g_modifiers = 0;        // Current modifier key state
-static uint8_t g_keys[6] = {0};        // Up to 6 simultaneous key presses
-static bool g_state_changed = false;   // Flag to indicate state changed
+static uint8_t g_modifiers = 0;                 // Current modifier key state
+static uint8_t g_keys[REPORT_KEYS_MAX] = {0};   // Up to 6 simultaneous key presses
+static bool g_state_changed = false;            // Flag to indicate state changed
 
 // PS/2 Frame decoding state
-static bool break_pending = false;     // True after receiving 0xF0
-static bool extended_pending = false;  // True after receiving 0xE0
+static bool break_pending = false;              // True after receiving 0xF0
+static bool extended_pending = false;           // True after receiving 0xE0
 
 //--------------------------------------------------------------------+
 // Helper Functions
 //--------------------------------------------------------------------+
+
+#define array_count(x)  (sizeof(x)/sizeof(x[0]))
+
 
 // Check if a keycode is a modifier and return its bit mask
 // Returns 0 if not a modifier
@@ -329,12 +332,12 @@ static void press_key(uint8_t hid_code) {
     }
     
     // Check if already pressed
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < array_count(g_keys); i++) {
         if (g_keys[i] == hid_code) return; // Already pressed
     }
     
     // Find empty slot and add
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < array_count(g_keys); i++) {
         if (g_keys[i] == 0) {
             g_keys[i] = hid_code;
             g_state_changed = true;
@@ -364,7 +367,7 @@ static void release_key(uint8_t hid_code) {
     }
     
     // Find and remove from keys array
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < array_count(g_keys); i++) {
         if (g_keys[i] == hid_code) {
             g_keys[i] = 0;
             g_state_changed = true;
