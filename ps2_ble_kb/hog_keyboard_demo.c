@@ -186,9 +186,10 @@ static void le_keyboard_setup(void){
 
 
 // HID Report sending
-static void send_report(uint8_t modifier, const uint8_t keycode){
+static void send_report(uint8_t modifier, const uint8_t* keycodes){
     //RSW HACK, should memcpy keycodes instead 
-    uint8_t report[] = {modifier, 0, keycode, 0, 0, 0, 0, 0};
+    uint8_t report[] = {modifier, 0, keycodes[0], 0, 0, 0, 0, 0};  //Keycode 0 just included as a marker
+    memcpy(&report[2], keycodes, 6);
     switch (protocol_mode){
         case 0:
             hids_device_send_boot_keyboard_input_report(con_handle, report, sizeof(report));
@@ -206,21 +207,21 @@ static void send_report(uint8_t modifier, const uint8_t keycode){
 // On embedded systems, send constant demo text with fixed period
 
 #define PS2_POLLING_PERIOD_MS 10
+//#define PS2_POLLING_PERIOD_MS 1
 
 static btstack_timer_source_t ps2_polling_timer;
 
-static int send_keycode;
-static int send_modifier;
-static int send_keyup;
+static uint8_t send_keycodes[6];
+static uint8_t send_modifier;
 
-static void send_key(int modifier, int keycode){
-    send_keycode = keycode;
+static void send_key(uint8_t modifier, const uint8_t* keycodes){
+    memcpy(send_keycodes, keycodes, sizeof(send_keycodes)/sizeof(send_keycodes[0]));
     send_modifier = modifier;
     hids_device_request_can_send_now_event(con_handle);
 }
 
 static void typing_can_send_now(void) {
-   send_report(send_modifier, send_keycode);
+   send_report(send_modifier, send_keycodes);
 }
 
 
@@ -230,16 +231,16 @@ static void typing_can_send_now(void) {
 // RSW - The keep alive stuff is from the USB version, although I think (?) you should also do this for BLE (?)
 static void hid_task(void)
 {
-   // Poll every 10ms to send reports
-   const uint32_t interval_ms = 10;
+   // Poll every 10ms to send reports if ps2_task found a new scancode in the PIO
+   const uint32_t INTERVAL_MS = 10;
    static uint32_t start_ms = 0;
 
-   if (to_ms_since_boot(get_absolute_time()) - start_ms < interval_ms) 
+   if (to_ms_since_boot(get_absolute_time()) - start_ms < INTERVAL_MS) 
       return; // not enough time
-   start_ms += interval_ms;
+   start_ms += INTERVAL_MS;
 
-   //RSW HACK, how to check if BLE suspended?
 #if 0
+   //RSW HACK, how to check if BLE suspended?
    // If suspended, don't send reports
    if (tud_suspended()) {
       // Could implement remote wakeup here if needed
@@ -250,7 +251,7 @@ static void hid_task(void)
 
    // Send report if state changed
    if (ps2_state_changed()) {
-      send_key(ps2_get_modifiers(), ps2_get_keys()[0]);
+      send_key(ps2_get_modifiers(), ps2_get_keys());
       ps2_clear_changed();
    }
 }
@@ -261,8 +262,8 @@ static void hid_task(void)
 //RSW: this runs every 10ms to check for a keypress from PIO
 static void ps2_poll_timer_handler(btstack_timer_source_t * ts)
 {
-    ps2_task();
-    hid_task();
+    ps2_task();   // Check for keypress
+    hid_task();   // Send the keypress to BLE
 
     // set next timer
     btstack_run_loop_set_timer(ts, PS2_POLLING_PERIOD_MS);
