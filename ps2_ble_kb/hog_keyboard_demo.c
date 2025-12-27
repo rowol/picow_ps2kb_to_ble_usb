@@ -188,14 +188,14 @@ static void le_keyboard_setup(void){
 // HID Report sending
 static void send_report(uint8_t modifier, const uint8_t keycode){
     //RSW HACK, should memcpy keycodes instead 
-    uint8_t report[] = {  modifier, 0, keycode, 0, 0, 0, 0, 0};
+    uint8_t report[] = {modifier, 0, keycode, 0, 0, 0, 0, 0};
     switch (protocol_mode){
         case 0:
             hids_device_send_boot_keyboard_input_report(con_handle, report, sizeof(report));
             break;
         case 1:
-           hids_device_send_input_report(con_handle, report, sizeof(report));
-           break;
+            hids_device_send_input_report(con_handle, report, sizeof(report));
+            break;
         default:
             break;
     }

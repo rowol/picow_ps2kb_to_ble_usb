@@ -412,6 +412,7 @@ void ps2_init(void)
 
 
 
+//Check the PIO and see if any keys have come in from the PS/2 keyboard
 void ps2_task(void) 
 {
    uint8_t scancode;
@@ -431,8 +432,6 @@ void ps2_task(void)
 
       default:   
          // Complete scancode received
-//       printf("scancode:%02X break_pending:%1d extended_pending:%1d\n", scancode, break_pending, extended_pending);
-
          handle_scancode(scancode, break_pending, extended_pending);
          break_pending = false;
          extended_pending = false;
