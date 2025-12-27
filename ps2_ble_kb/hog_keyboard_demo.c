@@ -50,6 +50,8 @@
 
 #include "hog_keyboard_demo.h"
 
+#include "pico/time.h"
+
 #include "btstack.h"
 
 #include "ble/gatt-service/battery_service_server.h"
@@ -57,6 +59,7 @@
 #include "ble/gatt-service/hids_device.h"
 
 #include "ps2kbd.h"
+#include "ps2.h"
 
 
 // from USB HID Specification 1.1, Appendix B.1
@@ -114,56 +117,7 @@ const uint8_t hid_descriptor_keyboard_boot_mode[] = {
 
 
 
-//
-#define CHAR_ILLEGAL     0xff
-#define CHAR_RETURN     '\r'
-#define CHAR_ESCAPE      27
-#define CHAR_TAB         '\t'
-#define CHAR_BACKSPACE   0x08
-#define CHAR_DEL         0x7f
 
-// Simplified US Keyboard with Shift modifier
-
-/**
- * English (US)
- */
-static const uint8_t keytable_us_none [] = {
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /*   0-3 */
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',                   /*  4-13 */
-    'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',                   /* 14-23 */
-    'u', 'v', 'w', 'x', 'y', 'z',                                       /* 24-29 */
-    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',                   /* 30-39 */
-    CHAR_RETURN, CHAR_ESCAPE, CHAR_BACKSPACE, CHAR_TAB, ' ',            /* 40-44 */
-    '-', '=', '[', ']', '\\', CHAR_ILLEGAL, ';', '\'', 0x60, ',',       /* 45-54 */
-    '.', '/', CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,   /* 55-60 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 61-64 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 65-68 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 69-72 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_DEL,                 /* 73-76 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 77-80 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 81-84 */
-    '*', '-', '+', '\n', '1', '2', '3', '4', '5',                       /* 85-97 */
-    '6', '7', '8', '9', '0', '.', 0xa7,                                 /* 97-100 */
-};
-
-static const uint8_t keytable_us_shift[] = {
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /*  0-3  */
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',                   /*  4-13 */
-    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',                   /* 14-23 */
-    'U', 'V', 'W', 'X', 'Y', 'Z',                                       /* 24-29 */
-    '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',                   /* 30-39 */
-    CHAR_RETURN, CHAR_ESCAPE, CHAR_BACKSPACE, CHAR_TAB, ' ',            /* 40-44 */
-    '_', '+', '{', '}', '|', CHAR_ILLEGAL, ':', '"', 0x7E, '<',         /* 45-54 */
-    '>', '?', CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,   /* 55-60 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 61-64 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 65-68 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 69-72 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_DEL,                 /* 73-76 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 77-80 */
-    CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL, CHAR_ILLEGAL,             /* 81-84 */
-    '*', '-', '+', '\n', '1', '2', '3', '4', '5',                       /* 85-97 */
-    '6', '7', '8', '9', '0', '.', 0xb1,                                 /* 97-100 */
-};
 
 // static btstack_timer_source_t heartbeat;
 static btstack_packet_callback_registration_t hci_event_callback_registration;
@@ -229,34 +183,11 @@ static void le_keyboard_setup(void){
     hids_device_register_packet_handler(packet_handler);
 }
 
-// HID Keyboard lookup
-static int lookup_keycode(uint8_t character, const uint8_t * table, int size, uint8_t * keycode){
-    int i;
-    for (i=0;i<size;i++){
-        if (table[i] != character) continue;
-        *keycode = i;
-        return 1;
-    }
-    return 0;
-}
 
-static int keycode_and_modifer_us_for_character(uint8_t character, uint8_t * keycode, uint8_t * modifier){
-    int found;
-    found = lookup_keycode(character, keytable_us_none, sizeof(keytable_us_none), keycode);
-    if (found) {
-        *modifier = 0;  // none
-        return 1;
-    }
-    found = lookup_keycode(character, keytable_us_shift, sizeof(keytable_us_shift), keycode);
-    if (found) {
-        *modifier = 2;  // shift
-        return 1;
-    }
-    return 0;
-}
 
 // HID Report sending
-static void send_report(int modifier, int keycode){
+static void send_report(uint8_t modifier, const uint8_t keycode){
+    //RSW HACK, should memcpy keycodes instead 
     uint8_t report[] = {  modifier, 0, keycode, 0, 0, 0, 0, 0};
     switch (protocol_mode){
         case 0:
@@ -271,71 +202,6 @@ static void send_report(int modifier, int keycode){
 }
 
 // Demo Application
-
-#ifdef HAVE_BTSTACK_STDIN
-
-// On systems with STDIN, we can directly type on the console
-static enum {
-    W4_INPUT,
-    W4_CAN_SEND_FROM_BUFFER,
-    W4_CAN_SEND_KEY_UP,
-} state;
-
-// Buffer for 20 characters
-static uint8_t ascii_input_storage[20];
-static btstack_ring_buffer_t ascii_input_buffer;
-
-static void typing_can_send_now(void){
-    switch (state){
-        case W4_CAN_SEND_FROM_BUFFER:
-            while (1){
-                uint8_t c;
-                uint32_t num_bytes_read;
-
-                btstack_ring_buffer_read(&ascii_input_buffer, &c, 1, &num_bytes_read);
-                if (num_bytes_read == 0){
-                    state = W4_INPUT;
-                    break;
-                }
-
-                uint8_t modifier;
-                uint8_t keycode;
-                int found = keycode_and_modifer_us_for_character(c, &keycode, &modifier);
-                if (!found) continue;
-
-                printf("sending: %c\n", c);
-
-                send_report(modifier, keycode);
-                state = W4_CAN_SEND_KEY_UP;
-                hids_device_request_can_send_now_event(con_handle);
-                break;
-            }
-            break;
-        case W4_CAN_SEND_KEY_UP:
-            send_report(0, 0);
-            if (btstack_ring_buffer_bytes_available(&ascii_input_buffer)){
-                state = W4_CAN_SEND_FROM_BUFFER;
-                hids_device_request_can_send_now_event(con_handle);
-            } else {
-                state = W4_INPUT;
-            }
-            break;
-        default:
-            break;
-    }
-}
-
-static void stdin_process(char character){
-    uint8_t c = character;
-    btstack_ring_buffer_write(&ascii_input_buffer, &c, 1);
-    // start sending
-    if (state == W4_INPUT && con_handle != HCI_CON_HANDLE_INVALID){
-        state = W4_CAN_SEND_FROM_BUFFER;
-        hids_device_request_can_send_now_event(con_handle);
-    }
-}
-
-#else
 
 // On embedded systems, send constant demo text with fixed period
 
@@ -353,35 +219,50 @@ static void send_key(int modifier, int keycode){
     hids_device_request_can_send_now_event(con_handle);
 }
 
-static void typing_can_send_now(void){
+static void typing_can_send_now(void) {
    send_report(send_modifier, send_keycode);
 }
 
 
 
-//RSW: this runs every 10ms to check for a keypress
+
+// Send HID report when state changes and also keep alives (?)
+// RSW - The keep alive stuff is from the USB version, although I think (?) you should also do this for BLE (?)
+static void hid_task(void)
+{
+   // Poll every 10ms to send reports
+   const uint32_t interval_ms = 10;
+   static uint32_t start_ms = 0;
+
+   if (to_ms_since_boot(get_absolute_time()) - start_ms < interval_ms) 
+      return; // not enough time
+   start_ms += interval_ms;
+
+   //RSW HACK, how to check if BLE suspended?
+#if 0
+   // If suspended, don't send reports
+   if (tud_suspended()) {
+      // Could implement remote wakeup here if needed
+      return;
+   }
+#endif
+
+
+   // Send report if state changed
+   if (ps2_state_changed()) {
+      send_key(ps2_get_modifiers(), ps2_get_keys()[0]);
+      ps2_clear_changed();
+   }
+}
+
+
+
+
+//RSW: this runs every 10ms to check for a keypress from PIO
 static void ps2_poll_timer_handler(btstack_timer_source_t * ts)
 {
-    if (send_keyup){
-        // just send key up
-        send_keyup = 0;
-        send_key(0, 0);
-    } 
-    else {
-        if (kbd_ready()) {
-            uint8_t character = kbd_getc();
-
-            // get keycode and send
-            uint8_t modifier;
-            uint8_t keycode;
-            int found = keycode_and_modifer_us_for_character(character, &keycode, &modifier);
-            if (found){
-                send_key(modifier, keycode);
-                printf("send_key: modifier:%02X\tkeycode:%02X\n", modifier, keycode);    //TESTING
-                send_keyup = 1;
-            }
-        }
-    }
+    ps2_task();
+    hid_task();
 
     // set next timer
     btstack_run_loop_set_timer(ts, PS2_POLLING_PERIOD_MS);
@@ -406,7 +287,7 @@ static void start_ps2_polling(void)
     bPolling = true;
 }
 
-#endif
+
 
 static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
     UNUSED(channel);
@@ -462,11 +343,6 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 int btstack_main(int argc, const char * argv[])
 {
     le_keyboard_setup();
-
-#ifdef HAVE_BTSTACK_STDIN
-    btstack_ring_buffer_init(&ascii_input_buffer, ascii_input_storage, sizeof(ascii_input_storage));
-    btstack_stdin_setup(stdin_process);
-#endif
 
     // turn on!
     hci_power_control(HCI_POWER_ON);

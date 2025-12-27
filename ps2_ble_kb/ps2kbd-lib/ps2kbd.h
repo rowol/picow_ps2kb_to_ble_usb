@@ -7,8 +7,6 @@
  */
 #pragma once
 
-#include "pico/types.h"   //For uint
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,17 +17,17 @@ extern "C" {
 //     gpio - GPIO number of data pin, ctl pin must be on next
 //            adjacent GPIO
 // Returns  - none
-void kbd_init(uint pio, uint gpio);
+void kbd_init(uint8_t pio, uint8_t gpio);
 
 // Return keyboard status
 // Parameters - none
 // Returns  - 0 for not ready, otherwise ready
-int kbd_ready(void);
+uint8_t kbd_ready(void);
 
 // Blocking keyboard read
 // Parameters - none
 // Returns  - single ASCII character
-char kbd_getc(void);
+uint8_t kbd_getc(void);
 
 #ifdef __cplusplus
 }

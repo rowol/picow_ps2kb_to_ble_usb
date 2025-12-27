@@ -6,10 +6,13 @@
  * Designed for BMC64 compatibility (Boot Keyboard protocol)
  */
 
+#include <stdio.h>
+#include <string.h>
 #include "ps2.h"
+#include "ps2kbd.h"
+
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
-#include <string.h>
 
 //--------------------------------------------------------------------+
 // HID Keycode Definitions (from USB HID Usage Tables)
@@ -282,11 +285,8 @@ static uint8_t g_keys[6] = {0};        // Up to 6 simultaneous key presses
 static bool g_state_changed = false;   // Flag to indicate state changed
 
 // PS/2 Frame decoding state
-static uint8_t frame_bit_index = 0;
-static uint8_t scancode_byte = 0;
 static bool break_pending = false;     // True after receiving 0xF0
 static bool extended_pending = false;  // True after receiving 0xE0
-static bool last_clk = true;           // Previous clock state
 
 //--------------------------------------------------------------------+
 // Helper Functions
@@ -399,76 +399,45 @@ static void handle_scancode(uint8_t code, bool is_break, bool is_extended) {
 // Public Interface
 //--------------------------------------------------------------------+
 
-void ps2_init(void) {
-    // Initialize clock pin (GP16) with pull-up
-    gpio_init(PS2_CLOCK_PIN);
-    gpio_set_dir(PS2_CLOCK_PIN, GPIO_IN);
-    gpio_pull_up(PS2_CLOCK_PIN);
-    
-    // Initialize data pin (GP17) with pull-up
-    gpio_init(PS2_DATA_PIN);
-    gpio_set_dir(PS2_DATA_PIN, GPIO_IN);
-    gpio_pull_up(PS2_DATA_PIN);
-    
+void ps2_init(void) 
+{
     // Initialize state
-    frame_bit_index = 0;
-    scancode_byte = 0;
     break_pending = false;
     extended_pending = false;
-    last_clk = gpio_get(PS2_CLOCK_PIN);
     
     g_modifiers = 0;
     memset(g_keys, 0, sizeof(g_keys));
     g_state_changed = false;
 }
 
-void ps2_task(void) {
-    // Read current clock level
-    bool clk = gpio_get(PS2_CLOCK_PIN);
-    
-    // Detect falling edge: previous high (true) -> current low (false)
-    if (last_clk && !clk) {
-        bool data_bit = gpio_get(PS2_DATA_PIN);
-        
-        if (frame_bit_index == 0) {
-            // Start bit (should be 0, ignore)
-        } else if (frame_bit_index >= 1 && frame_bit_index <= 8) {
-            // Data bits (LSB first)
-            scancode_byte >>= 1;
-            if (data_bit) {
-                scancode_byte |= 0x80;
-            }
-        } else if (frame_bit_index == 9) {
-            // Parity bit (ignored for now)
-        } else if (frame_bit_index == 10) {
-            // Stop bit - frame complete
-            uint8_t code = scancode_byte;
-            
-            if (code == 0xF0) {
-                // Break prefix
-                break_pending = true;
-            } else if (code == 0xE0) {
-                // Extended prefix
-                extended_pending = true;
-            } else {
-                // Complete scancode received
-                handle_scancode(code, break_pending, extended_pending);
-                break_pending = false;
-                extended_pending = false;
-            }
-            
-            // Reset for next frame
-            frame_bit_index = 0;
-            scancode_byte = 0;
-            
-            last_clk = clk;
-            return;
-        }
-        
-        frame_bit_index++;
-    }
-    
-    last_clk = clk;
+
+
+void ps2_task(void) 
+{
+   uint8_t scancode;
+   if (!(scancode = kbd_ready())) 
+      return;
+
+   switch (scancode) {
+      case 0xF0:         
+         // Break prefix
+         break_pending = true;
+         break;
+
+      case 0xE0:
+         // Extended prefix
+         extended_pending = true;
+         break;
+
+      default:   
+         // Complete scancode received
+//       printf("scancode:%02X break_pending:%1d extended_pending:%1d\n", scancode, break_pending, extended_pending);
+
+         handle_scancode(scancode, break_pending, extended_pending);
+         break_pending = false;
+         extended_pending = false;
+         break;
+   }
 }
 
 uint8_t ps2_get_modifiers(void) {

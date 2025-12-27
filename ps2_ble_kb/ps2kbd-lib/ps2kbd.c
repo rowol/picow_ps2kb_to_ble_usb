@@ -7,6 +7,7 @@
  */
 #include "ps2kbd.pio.h"
 #include "ps2kbd.h"
+#include "ps2.h"
 
 #include "hardware/clocks.h"
 #include "hardware/pio.h"
@@ -15,7 +16,8 @@ static PIO kbd_pio;         // pio0 or pio1
 static uint kbd_sm;         // pio state machine index
 static uint base_gpio;      // data signal gpio #
 
-void kbd_init(uint pio, uint gpio) {
+void kbd_init(uint8_t pio, uint8_t gpio) 
+{
     kbd_pio = pio ? pio1 : pio0;
     base_gpio = gpio; // base_gpio is data signal, base_gpio+1 is clock signal
     // init KBD pins to input
@@ -45,80 +47,30 @@ void kbd_init(uint pio, uint gpio) {
     // Ready to go
     pio_sm_init(kbd_pio, kbd_sm, offset, &c);
     pio_sm_set_enabled(kbd_pio, kbd_sm, true);
+
+    //Initialize the ps2.c/scan code conversion module
+    ps2_init();
 }
 
-// clang-format off
 
-#define BS  0x8  
-#define TAB 0x9
-#define LF  0xA
-#define CR  0xD
-#define ESC 0x1B
-#define DEL 0x7F
 
-// Upper-Case ASCII codes by keyboard-code index, 16 elements per row
-static const uint8_t lower[] = {
-    0,  0,   0,   0,   0,   0,   0,   0,  0,  0,   0,   0,   0,   TAB, '`', 0,
-    0,  0,   0,   0,   0,   'q', '1', 0,  0,  0,   'z', 's', 'a', 'w', '2', 0,
-    0,  'c', 'x', 'd', 'e', '4', '3', 0,  0,  ' ', 'v', 'f', 't', 'r', '5', 0,
-    0,  'n', 'b', 'h', 'g', 'y', '6', 0,  0,  0,   'm', 'j', 'u', '7', '8', 0,
-    0,  ',', 'k', 'i', 'o', '0', '9', 0,  0,  '.', '/', 'l', ';', 'p', '-', 0,
-    0,  0,   '\'',0,   '[', '=', 0,   0,  0,  0,   CR,  ']', 0,   '\\',0,   0,
-    0,  0,   0,   0,   0,   0,   BS,  0,  0,  0,   0,   0,   0,   0,   0,   0,
-    0,  DEL, 0,   0,   0,   0,   ESC, 0,  0,  0,   0,   0,   0,   0,   0,   0};
 
-// Upper-Case ASCII codes by keyboard-code index
-static const uint8_t upper[] = {
-    0,  0,   0,   0,   0,   0,   0,   0,  0,  0,   0,   0,   0,   TAB, '~', 0,
-    0,  0,   0,   0,   0,   'Q', '!', 0,  0,  0,   'Z', 'S', 'A', 'W', '@', 0,
-    0,  'C', 'X', 'D', 'E', '$', '#', 0,  0,  ' ', 'V', 'F', 'T', 'R', '%', 0,
-    0,  'N', 'B', 'H', 'G', 'Y', '^', 0,  0,  0,   'M', 'J', 'U', '&', '*', 0,
-    0,  '<', 'K', 'I', 'O', ')', '(', 0,  0,  '>', '?', 'L', ':', 'P', '_', 0,
-    0,  0,   '"', 0,   '{', '+', 0,   0,  0,  0,   CR,  '}', 0,   '|', 0,   0,
-    0,  0,   0,   0,   0,   0,   BS,  0,  0,  0,   0,   0,   0,   0,   0,   0,
-    0,  DEL, 0,   0,   0,   0,   ESC, 0,  0,  0,   0,   0,   0,   0,   0,   0};
-// clang-format on
 
-static uint8_t release; // Flag indicates the release of a key
-static uint8_t shift;   // Shift indication
-static uint8_t ascii;   // Translated to ASCII
-
-int __attribute__((noinline)) kbd_ready(void) {
-    if (ascii) // We might already have a character
-        return ascii;
+uint8_t __attribute__((noinline)) kbd_ready(void) 
+{
     if (pio_sm_is_rx_fifo_empty(kbd_pio, kbd_sm))
         return 0; // no new codes in the fifo
+
     // pull a scan code from the PIO SM fifo
-    uint8_t code = *((io_rw_8*)&kbd_pio->rxf[kbd_sm] + 3);
-    switch (code) {
-    case 0xF0:               // key-release code 0xF0 detected
-        release = 1;         // set release
-        break;               // go back to start
-    case 0x12:               // Left-side SHIFT key detected
-    case 0x59:               // Right-side SHIFT key detected
-        if (release) {       // L or R Shift detected, test release
-            shift = 0;       // Key released preceded  this Shift, so clear shift
-            release = 0;     // Clear key-release flag
-        } else
-            shift = 1; // No previous Shift detected before now, so set Shift_Key flag now
-        break;
-    default:
-        // no case applies
-        if (!release) {                            // If no key-release detected yet
-            if (code < sizeof(upper)/sizeof(upper[0])) {   //Prevent lookups beyond table end
-                ascii = (shift ? upper : lower)[code]; // Get ASCII value by case
-            }
-        }
-        release = 0;
-        break;
-    }
-    return ascii;
+    return *((io_rw_8*)&kbd_pio->rxf[kbd_sm] + 3);
 }
 
-char kbd_getc(void) {
-    char c;
+
+
+uint8_t kbd_getc(void) 
+{
+    uint8_t c;
     while (!(c = kbd_ready()))
-        tight_loop_contents();
-    ascii = 0;
+        tight_loop_contents();      //RSW, not sure this is needed (?)
     return c;
 }
