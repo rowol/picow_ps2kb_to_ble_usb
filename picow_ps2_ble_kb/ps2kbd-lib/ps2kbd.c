@@ -39,7 +39,15 @@ void kbd_init(uint8_t pio, uint8_t gpio)
     // Set the base input pin. pin index 0 is DAT, index 1 is CLK
     sm_config_set_in_pins(&c, base_gpio);
     // Shift 8 bits to the right, autopush enabled
-    sm_config_set_in_shift(&c, true, true, 11);   //Include start, parity, and stop bits
+    sm_config_set_in_shift(&c, true, true, 1+8+1+1);  //Include start, 8 data, parity, and stop bits
+
+    //RSW set up pin to use for jumps 
+    // Crucially, configure which specific pin the JMP PIN instruction will read
+    // (All pins are visible to PIO input logic, shouldn't need to pio_gpio_init or gpio_set_dir on the pin)
+    sm_config_set_jmp_pin(&c, base_gpio);   //Use the data pin for "jmp pin" tests 
+    //pio_gpio_init(kbd_pio, base_gpio);
+    //gpio_set_dir(base_gpio, GPIO_IN);
+
     // Deeper FIFO as we're not doing any TX
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
     // We don't expect clock faster than 16.7KHz and want no less

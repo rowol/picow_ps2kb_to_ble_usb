@@ -29,6 +29,17 @@
 ; data: pin 0
 ; start bit is 0, stop bit is 1, parity is 1 if number of bits is odd
 ; check these in C later, reset PIO if out of sync with PS/2
+
+start:
+    wait 1 pin 1     ; wait for high
     wait 0 pin 1 [1] ; wait negative clock edge, then one more cycle
-    in pins, 1       ; sample data, shifts data into FIFO
-    wait 1 pin 1     ; wait for positive edge
+    jmp  pin, start  ; start bit should be low, jump back if not
+                     ; (crude attempt to resync when needed)
+    in pins, 1       ; store the start bit in the ISR (input shift register)
+
+    set x, 9         ; (8 data bits, partity, and stop) - 1
+bitloop:
+    wait 1 pin 1     ; wait for high
+    wait 0 pin 1 [1] ; wait negative clock edge, then one more cycle
+    in pins, 1       ; read data, shifts 1 data bit into ISR
+    jmp x-- bitloop
