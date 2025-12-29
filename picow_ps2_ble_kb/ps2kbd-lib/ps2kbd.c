@@ -70,6 +70,10 @@ uint8_t __attribute__((noinline)) kbd_ready(void)
 
    #define SCANCODE_SHIFT 22
 
+
+   if (pio_sm_is_rx_fifo_empty(kbd_pio, kbd_sm))
+      return 0; // no new codes in the fifo
+
    // pull a scan code from the PIO SM fifo
    // if start, stop, and parity don't check out, toss the character, reset the PIO, and dump any keys we think are pressed
    uint32_t dw = kbd_pio->rxf[kbd_sm];
