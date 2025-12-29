@@ -317,7 +317,7 @@ static uint8_t get_modifier_mask(uint8_t hid_code) {
 //The caps lock is set locally by the keyboard, so that may still be set...
 void ps2_clear_all_keys(void)
 {
-   memset(g_keys, 0, array_count(g_keys));
+   memset(g_keys, 0, sizeof(g_keys));
    g_modifiers = 0;        //Not sure if need to do this?  
    g_state_changed = true;
 }
