@@ -55,7 +55,7 @@ void kbd_init(uint8_t pio, uint8_t gpio)
 }
 
 
-static void ps2_reset(void)
+static void kbd_reset(void)
 {
    pio_sm_clear_fifos(kbd_pio, kbd_sm);
    pio_sm_restart(kbd_pio, kbd_sm);
@@ -80,15 +80,15 @@ uint8_t __attribute__((noinline)) kbd_ready(void)
    
    if (dw & START_BIT) {
       printf("PS/2 sync error, start bit not low\n");
-      ps2_reset();
-      kbd_clear_all_keys();   //Okay to dump all pressed keys?
+      kbd_reset();
+      ps2_clear_all_keys();   //Okay to dump all pressed keys?
       return 0;
    }
 
    if (!(dw & STOP_BIT)) {
       printf("PS/2 sync error, stop bit not high\n");
-      ps2_reset();
-      kbd_clear_all_keys();   //Okay to dump all pressed keys?
+      kbd_reset();
+      ps2_clear_all_keys();   //Okay to dump all pressed keys?
       return 0;
    }
 
@@ -103,8 +103,8 @@ uint8_t __attribute__((noinline)) kbd_ready(void)
    }
    if ((bool)(ctHigh & 1) == (bool)(dw & PARITY_BIT)) {
       printf("PS/2 sync error, parity check failed\n");
-      ps2_reset();
-      kbd_clear_all_keys();   //Should maybe also dump all pressed keys?
+      kbd_reset();
+      ps2_clear_all_keys();   //Should maybe also dump all pressed keys?
       return 0;
    }
 

@@ -315,7 +315,7 @@ static uint8_t get_modifier_mask(uint8_t hid_code) {
 
 //Call this if people are mashing the keyboard and you're getting out of sync with what's pressed.
 //The caps lock is set locally by the keyboard, so that may still be set...
-void kbd_clear_all_keys(void)
+void ps2_clear_all_keys(void)
 {
    memset(g_keys, 0, array_count(g_keys));
    g_modifiers = 0;        //Not sure if need to do this?  
@@ -358,7 +358,7 @@ static void press_key(uint8_t hid_code) {
     }
     // No empty slot - 6 keys already pressed (rollover)
     printf("Pressing more than 6 keys, clearing all\n"); 
-    kbd_clear_all_keys();
+    ps2_clear_all_keys();
     g_state_changed = true;
 }
 
@@ -392,7 +392,7 @@ static void release_key(uint8_t hid_code) {
         }
     }
     printf("Release non-pressed key, removing all\n"); 
-    kbd_clear_all_keys();
+    ps2_clear_all_keys();
 }
 
 // Handle a complete PS/2 scancode
