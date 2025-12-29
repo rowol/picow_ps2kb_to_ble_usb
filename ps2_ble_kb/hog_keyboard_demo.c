@@ -211,7 +211,6 @@ static void send_report(uint8_t modifier, const uint8_t* keycodes){
 // On embedded systems, send constant demo text with fixed period
 
 #define PS2_POLLING_PERIOD_MS 10
-//#define PS2_POLLING_PERIOD_MS 1
 
 static btstack_timer_source_t ps2_polling_timer;
 
@@ -225,6 +224,10 @@ static void send_key(uint8_t modifier, const uint8_t* keycodes){
 }
 
 static void typing_can_send_now(void) {
+   //RSW TESTING, check if keys or modifier changed between request send and send_report
+   assert(("Modifiers changed between request and send", send_modifier==ps2_get_modifiers()));
+   assert(("Keys changed between request and send", memcmp(send_keycodes, ps2_get_keys, REPORT_KEYS_MAX)!=0));
+
    send_report(send_modifier, send_keycodes);
 }
 

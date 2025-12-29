@@ -27,6 +27,9 @@ void ps2_task(void);
 uint8_t ps2_get_modifiers(void);
 const uint8_t* ps2_get_keys(void);
 
+// Clears all pressed keys, for error recovery from various sync problems
+void kbd_clear_all_keys(void);
+
 // Check if keyboard state has changed since last report
 bool ps2_state_changed(void);
 

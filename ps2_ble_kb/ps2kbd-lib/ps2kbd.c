@@ -5,6 +5,8 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
+#include <stdio.h>
+
 #include "ps2kbd.pio.h"
 #include "ps2kbd.h"
 #include "ps2.h"
@@ -37,7 +39,7 @@ void kbd_init(uint8_t pio, uint8_t gpio)
     // Set the base input pin. pin index 0 is DAT, index 1 is CLK
     sm_config_set_in_pins(&c, base_gpio);
     // Shift 8 bits to the right, autopush enabled
-    sm_config_set_in_shift(&c, true, true, 8);
+    sm_config_set_in_shift(&c, true, true, 11);   //Include start, parity, and stop bits
     // Deeper FIFO as we're not doing any TX
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
     // We don't expect clock faster than 16.7KHz and want no less
@@ -53,16 +55,56 @@ void kbd_init(uint8_t pio, uint8_t gpio)
 }
 
 
-
+static void ps2_reset(void)
+{
+   pio_sm_clear_fifos(kbd_pio, kbd_sm);
+   pio_sm_restart(kbd_pio, kbd_sm);
+}
 
 
 uint8_t __attribute__((noinline)) kbd_ready(void) 
-{
-    if (pio_sm_is_rx_fifo_empty(kbd_pio, kbd_sm))
-        return 0; // no new codes in the fifo
+{ 
+   #define START_BIT    0x00200000
+   #define PARITY_BIT   0x40000000
+   #define STOP_BIT     0x80000000
 
-    // pull a scan code from the PIO SM fifo
-    return *((io_rw_8*)&kbd_pio->rxf[kbd_sm] + 3);
+   #define SCANCODE_SHIFT 22
+
+   // pull a scan code from the PIO SM fifo
+   // if start, stop, and parity don't check out, toss the character, reset the PIO, and dump any keys we think are pressed
+   uint32_t dw = kbd_pio->rxf[kbd_sm];
+   
+   if (dw & START_BIT) {
+      printf("PS/2 sync error, start bit not low\n");
+      ps2_reset();
+      kbd_clear_all_keys();   //Okay to dump all pressed keys?
+      return 0;
+   }
+
+   if (!(dw & STOP_BIT)) {
+      printf("PS/2 sync error, stop bit not high\n");
+      ps2_reset();
+      kbd_clear_all_keys();   //Okay to dump all pressed keys?
+      return 0;
+   }
+
+
+   uint8_t scancode = (dw >> SCANCODE_SHIFT) & 0xFF;  // Pull scancode byte out without start, partiy, and stop bits
+
+   //Check scancode parity (PS/2 uses odd parity, i.e. 1 for even number of high bits)
+   int ctHigh = 0;
+   for (int x=7; x>=0; x--) {
+      if (scancode & 1<<x)
+         ctHigh++;
+   }
+   if ((bool)(ctHigh & 1) == (bool)(dw & PARITY_BIT)) {
+      printf("PS/2 sync error, parity check failed\n");
+      ps2_reset();
+      kbd_clear_all_keys();   //Should maybe also dump all pressed keys?
+      return 0;
+   }
+
+   return scancode;
 }
 
 
