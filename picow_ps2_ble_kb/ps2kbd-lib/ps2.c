@@ -14,6 +14,9 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 
+//Uncomment next line if building for use with Microsoft Speedbump keyboard (i.e. Natural Keyboard Elite)
+#define MSFT_SPEEDBUMP_KB
+
 //--------------------------------------------------------------------+
 // HID Keycode Definitions (from USB HID Usage Tables)
 //--------------------------------------------------------------------+
@@ -91,9 +94,13 @@
 #define HID_KEY_F11             0x44
 #define HID_KEY_F12             0x45
 
-// Print Screen, Scroll Lock, Pause
+// Print Screen, Num Lock, Pause
 #define HID_KEY_PRINT_SCREEN    0x46
-#define HID_KEY_SCROLL_LOCK     0x47
+#ifndef MSFT_SPEEDBUMP_KB
+ #define HID_KEY_SCROLL_LOCK    0x47
+#else
+ #define HID_KEY_NUM_LOCK       0x47      //MSFT speedbump kbs had NUM_LOCK and SCROLL_LOCK scancodes reversed
+#endif //MSFT_SPEEDBUMP_KB
 #define HID_KEY_PAUSE           0x48
 
 // Navigation cluster
@@ -109,7 +116,11 @@
 #define HID_KEY_ARROW_UP        0x52
 
 // Numpad
-#define HID_KEY_NUM_LOCK        0x53
+#ifndef MSFT_SPEEDBUMP_KB
+ #define HID_KEY_NUL_LOCK       0x53
+#else
+ #define HID_KEY_SCROLL_LOCK    0x53      //MSFT speedbump kbs had NUM_LOCK and SCROLL_LOCK scancodes reversed
+#endif //MSFT_SPEEDBUMP_KB
 #define HID_KEY_KEYPAD_DIVIDE   0x54
 #define HID_KEY_KEYPAD_MULTIPLY 0x55
 #define HID_KEY_KEYPAD_SUBTRACT 0x56
