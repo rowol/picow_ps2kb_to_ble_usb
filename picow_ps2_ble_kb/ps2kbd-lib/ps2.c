@@ -14,8 +14,6 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 
-//Uncomment next line if building for use with Microsoft Speedbump keyboard (i.e. Natural Keyboard Elite)
-#define MSFT_SPEEDBUMP_KB
 
 //--------------------------------------------------------------------+
 // HID Keycode Definitions (from USB HID Usage Tables)
