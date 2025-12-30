@@ -3,6 +3,9 @@
 set(PROJECT hog_keyboard_demo)
 cmake_minimum_required(VERSION 3.13)
 
+# Uncomment next line for debug version
+set(CMAKE_BUILD_TYPE "Debug")
+
 # Uncomment next line if building for use with Microsoft Speedbump keyboard (i.e. Natural Keyboard Elite)
 add_compile_definitions(MSFT_SPEEDBUMP_KB)
 
