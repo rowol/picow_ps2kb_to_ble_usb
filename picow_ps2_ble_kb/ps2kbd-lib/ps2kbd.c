@@ -14,6 +14,9 @@
 #include "hardware/clocks.h"
 #include "hardware/pio.h"
 
+#include "pico/time.h"
+
+
 static PIO kbd_pio;         // pio0 or pio1
 static uint kbd_sm;         // pio state machine index
 static uint base_gpio;      // data signal gpio #
@@ -127,4 +130,170 @@ uint8_t kbd_getc(void)
     while (!(c = kbd_ready()))
         tight_loop_contents();      //RSW, not sure this is needed (?)
     return c;
+}
+
+
+
+//PS/2 set/reset LED command stuff
+#define SET_LEDS_CMD       0xED
+#define ECHO_CMD           0xEE
+
+#define CAPS_LOCK_MASK     0x04
+#define NUM_LOCK_MASK      0x02
+#define SCROLL_LOCK_MASK   0x01
+
+#define PS2_DAT_GPIO       (base_gpio)
+#define PS2_CLK_GPIO       (base_gpio+1)
+
+//PS/2 spec says for host to device, write data on the falling clk edge
+//and kb will read on the rising edge
+//Assume clock high on entry
+static void kbd_write_bit(bool bit)
+{
+   //Wait for clock line high (sanity check)
+   while (gpio_get(PS2_CLK_GPIO)!=1)
+      busy_wait_us(1);
+
+   //Wait for clock line falling edge
+   while (gpio_get(PS2_CLK_GPIO)!=0)
+      busy_wait_us(1);
+
+   //Write out a bit on falling edge
+   gpio_put(PS2_DAT_GPIO, bit ? 1 : 0);
+}
+
+
+//Assumes clock high on entry
+//HACK, can make another PIO machine for this (?)
+/*
+   1) Bring the Clock line low for at least 100 microseconds.
+   2) Bring the Data line low.
+   3) Release the Clock line.
+   4) Wait for the device to bring the Clock line low.
+   5) Set/reset the Data line to send the first data bit
+   6) Wait for the device to bring Clock high.
+   7) Wait for the device to bring Clock low.
+   8) Repeat steps 5-7 for the other seven data bits and the parity bit
+   9) Release the Data line.
+   10) Wait for the device to bring Data low.
+   11) Wait for the device to bring Clock low.
+   12) Wait for the device to release Data and Clock
+*/
+static void kbd_write_byte(uint8_t c)
+{
+   //Disable PIO reading PS/2 (?)
+   pio_sm_set_enabled(kbd_pio, kbd_sm, false);
+
+
+   // Setup GPIOs for output
+   gpio_set_dir(PS2_CLK_GPIO, GPIO_OUT);
+
+   //Pull CLK line low (for at least 100us) to inhibit communication from device
+   gpio_put(PS2_CLK_GPIO, 0);
+   busy_wait_us(100);
+
+   //Set CLK line high and DATA low (start bit)
+   //Host request to send, causes kb to start generating clock pulses
+   gpio_set_dir(PS2_DAT_GPIO, GPIO_OUT);
+   gpio_put(PS2_DAT_GPIO, 0);             //This will be the start bit
+   gpio_set_dir(PS2_CLK_GPIO, GPIO_IN);   //(Sets CLK high, PS/2 lines are pulled up)
+   gpio_pull_up(PS2_CLK_GPIO);
+
+
+   //Clock should be high now, and start bit is on the data line
+   int ctParity=0;
+   for (int x=0; x<8; x++) {
+      kbd_write_bit(c & 1);
+      ctParity += c&1;
+      c >>= 1;                   //Next bit
+   }
+
+   kbd_write_bit(ctParity^1);    //Send parity, 1 if even number of set bits, 0 if odd
+   kbd_write_bit(1);             //Stop bit
+
+   //Wait for clock rising edge (?)
+   while (gpio_get(PS2_CLK_GPIO)!=1)
+      busy_wait_us(1);
+
+   //Set DAT back to input, to read ACK bit
+   gpio_set_dir(PS2_DAT_GPIO, GPIO_IN);
+   gpio_pull_up(PS2_DAT_GPIO);
+
+   //Device acknowledge bit is special, device puts it out on the rising edge
+   while (gpio_get(PS2_CLK_GPIO)!=1)      //Rising
+      busy_wait_us(1);
+   while (gpio_get(PS2_CLK_GPIO)!=0)      //Falling
+      busy_wait_us(1);
+   if (0!=gpio_get(PS2_DAT_GPIO))
+      printf("Bad device ACK bit\n");
+   while (gpio_get(PS2_DAT_GPIO)!=1)      //Wait for ACK pulse to end
+      busy_wait_us(1);
+
+
+   //Reset PS/2 PIO ?
+   pio_sm_set_enabled(kbd_pio, kbd_sm, true);
+   kbd_reset();
+// pio_sm_restart(kbd_pio, kbd_sm);   //Don't dump the fifo (?)
+}
+
+
+
+//Writes keyboard leds
+//Note: PS/2 clock should be 30-50us low, 30-50us high
+//General sequence is on p5-6 of The PS/@ Mount/Keyboard Protocol doc
+static void kbd_write_leds(uint8_t led_mask)
+{
+   uint8_t scancode;
+
+   kbd_write_byte(SET_LEDS_CMD);
+
+   //Wait for 0xFA scancode response ?
+   //HACK, should probably do this with a state machine, so that BLE task stuff still runs)
+   while (!(scancode = kbd_ready()))
+      ;
+   if (scancode != 0xFA)
+      goto clear_err;
+
+   //Send LED mask
+   kbd_write_byte(led_mask);
+
+   //Wait for 0xFA scancode response ?
+   //HACK, should probably do this with a state machine, so that BLE task stuff still runs)
+   while (!(scancode = kbd_ready()))
+      ;
+   if (scancode == 0xFA)
+      return;
+
+
+// My MSFT kb doesn't like it when you try to light all three leds (i.e. led_mask = 7)
+// It sends a 0xFE/resend after the mask byte ... then if I resend the command I get that
+// again and again.   When I stop resending the command, the kb no longer sends scan codes.  
+// Sending it an 0xFF reset fixes this, but also clears all three LEDS.
+//
+// This is kind of a hack.   If I get anything other than a good 0xFA response to the mask, 
+// i.e. 0xFE, etc, assume the command is not supported.    In this case the MSFT
+// speedbump kb seems to stop sending scancodes, but sending an echo command to it 
+// appears to fix this problem.      
+
+#define MAX_TRIES 3
+clear_err:     
+   for (int x=0; x<MAX_TRIES; x++) {
+      kbd_write_byte(ECHO_CMD);  
+      while (!(scancode = kbd_ready()))
+         ;
+      printf("Clr err w/ echo, got %02X\n", scancode);
+      if (scancode == 0xEE)
+         break;
+   }
+}
+
+
+
+void kbd_write_leds_flags(bool bCapsLed, bool bNumLed, bool bScrollLed)
+{
+   uint8_t led_mask =   (bCapsLed ? CAPS_LOCK_MASK : 0)
+                      | (bNumLed ? NUM_LOCK_MASK : 0)
+                      | (bScrollLed ? SCROLL_LOCK_MASK : 0);
+
+   kbd_write_leds(led_mask);
 }

@@ -297,6 +297,10 @@ static bool g_state_changed = false;            // Flag to indicate state change
 static bool break_pending = false;              // True after receiving 0xF0
 static bool extended_pending = false;           // True after receiving 0xE0
 
+static bool g_caps_lock_led = false;            // True if led should be on
+static bool g_num_lock_led = false;
+static bool g_scroll_lock_led = false;
+
 //--------------------------------------------------------------------+
 // Helper Functions
 //--------------------------------------------------------------------+
@@ -332,6 +336,13 @@ void ps2_clear_all_keys(void)
 }
 
 
+static void update_leds(void) 
+{
+   kbd_write_leds_flags(g_caps_lock_led, g_num_lock_led, g_scroll_lock_led);
+}
+
+
+
 // Press a key (add to the current state)
 static void press_key(uint8_t hid_code) {
     if (hid_code == 0) return;
@@ -347,11 +358,30 @@ static void press_key(uint8_t hid_code) {
         return;
     }
     
+
+    // BLE host does not reliably send output report when keyboard leds should change,
+    // so instead I am syncing them locally
+
     // Handle Caps Lock specially (it's a toggle, but we just send press/release)
     if (hid_code == 0xFC) {
         hid_code = HID_KEY_CAPS_LOCK;
+        g_caps_lock_led = !g_caps_lock_led;     //Locally sync keyboard leds
+        update_leds(); 
     }
-    
+
+    //Check for NUM lock, to locally sync keyboard leds
+    if (hid_code == HID_KEY_NUM_LOCK) {
+        g_num_lock_led = !g_num_lock_led;   
+        update_leds(); 
+    }
+
+    //Check for SCROLL lock, to locally sync keyboard leds
+    if (hid_code == HID_KEY_SCROLL_LOCK) {
+        g_scroll_lock_led = !g_scroll_lock_led; 
+        update_leds(); 
+    }
+
+
     // Check if already pressed
     for (int i = 0; i < array_count(g_keys); i++) {
         if (g_keys[i] == hid_code) return; // Already pressed
@@ -439,6 +469,11 @@ void ps2_init(void)
     g_modifiers = 0;
     memset(g_keys, 0, sizeof(g_keys));
     g_state_changed = false;
+
+    g_caps_lock_led = false;            // Start with all leds off (since these are set locally, 
+    g_num_lock_led = false;             // I'm assuming that's how host initializes them)
+    g_scroll_lock_led = false;          
+    update_leds();
 }
 
 

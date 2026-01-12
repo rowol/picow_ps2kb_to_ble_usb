@@ -29,6 +29,9 @@ uint8_t kbd_ready(void);
 // Returns  - single ASCII character
 uint8_t kbd_getc(void);
 
+// Write CAPS/NUM/SCROLL LOCK keyboard LEDs
+void kbd_write_leds_flags(bool bCapsLed, bool bNumLed, bool bScrollLed);
+
 #ifdef __cplusplus
 }
 #endif
