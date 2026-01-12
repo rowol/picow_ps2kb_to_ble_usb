@@ -241,7 +241,7 @@ static void kbd_write_byte(uint8_t c)
 //Writes keyboard leds
 //Note: PS/2 clock should be 30-50us low, 30-50us high
 //General sequence is on p5-6 of The PS/@ Mount/Keyboard Protocol doc
-static void kbd_write_leds(uint8_t led_mask)
+static void write_leds(uint8_t led_mask)
 {
    uint8_t scancode;
 
@@ -291,9 +291,11 @@ clear_err:
 
 void kbd_write_leds_flags(bool bCapsLed, bool bNumLed, bool bScrollLed)
 {
+#ifndef NO_PS2_WRITES   
    uint8_t led_mask =   (bCapsLed ? CAPS_LOCK_MASK : 0)
                       | (bNumLed ? NUM_LOCK_MASK : 0)
                       | (bScrollLed ? SCROLL_LOCK_MASK : 0);
 
-   kbd_write_leds(led_mask);
+   write_leds(led_mask);
+#endif   
 }

@@ -36,6 +36,7 @@ will work off VBUS.  Current limit is determined by the USB port, standard USB 2
 
 * Project built with [Raspberry Pi Pico C SDK 2.2.1](https://github.com/raspberrypi/pico-sdk).  It may work with other versions of the SDK 
 
+* Define NO_PS2_WRITES in ps2kbd-lib CMakeLists.txt to disable all PS/2 writes (these writes are necessary to set the kb led state.)
 
 
 

@@ -6,6 +6,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 add_library(ps2kbd-lib INTERFACE)
+
+# Uncomment next line if don't want ps/2 kb writes (writes are necessary for setting kb led state)
+#target_compile_definitions(ps2kbd-lib INTERFACE NO_PS2_WRITES)
+
 target_include_directories(ps2kbd-lib INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(ps2kbd-lib INTERFACE hardware_pio)
 target_sources(ps2kbd-lib INTERFACE
