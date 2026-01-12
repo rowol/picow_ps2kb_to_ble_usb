@@ -34,13 +34,7 @@ will work off VBUS.  Current limit is determined by the USB port, standard USB 2
 
 ## Notes:
 
-* Project built with [Raspberry Pi Pico C SDK 2.2.1](https://github.com/raspberrypi/pico-sdk).  It may work with other 
-versions of the SDK 
-
-* Define MSFT_SPEEDBUMP_KB in CMakeLists.txt for the Microsoft Natural Keyboard Elite: this reverses the scancodes for NUM 
-and SCROLL locks.   You may or may not need this for other PS/2 keyboards.   This also prevents all three KB leds from 
-turning on at the same time as this appears to cause an error with my keyboard.  (Modes still function properly, but KB 
-leds retain last setting.)
+* Project built with [Raspberry Pi Pico C SDK 2.2.1](https://github.com/raspberrypi/pico-sdk).  It may work with other versions of the SDK 
 
 
 

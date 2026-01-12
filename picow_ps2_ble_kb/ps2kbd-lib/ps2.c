@@ -94,11 +94,7 @@
 
 // Print Screen, Num Lock, Pause
 #define HID_KEY_PRINT_SCREEN    0x46
-#ifndef MSFT_SPEEDBUMP_KB
- #define HID_KEY_SCROLL_LOCK    0x47
-#else
- #define HID_KEY_NUM_LOCK       0x47      //MSFT speedbump kbs had NUM_LOCK and SCROLL_LOCK scancodes reversed
-#endif //MSFT_SPEEDBUMP_KB
+#define HID_KEY_SCROLL_LOCK     0x47
 #define HID_KEY_PAUSE           0x48
 
 // Navigation cluster
@@ -114,11 +110,7 @@
 #define HID_KEY_ARROW_UP        0x52
 
 // Numpad
-#ifndef MSFT_SPEEDBUMP_KB
- #define HID_KEY_NUL_LOCK       0x53
-#else
- #define HID_KEY_SCROLL_LOCK    0x53      //MSFT speedbump kbs had NUM_LOCK and SCROLL_LOCK scancodes reversed
-#endif //MSFT_SPEEDBUMP_KB
+#define HID_KEY_NUM_LOCK        0x53
 #define HID_KEY_KEYPAD_DIVIDE   0x54
 #define HID_KEY_KEYPAD_MULTIPLY 0x55
 #define HID_KEY_KEYPAD_SUBTRACT 0x56
@@ -247,14 +239,14 @@ static const uint8_t scancode_to_hid[256] = {
     [0x74] = HID_KEY_KEYPAD_6,
     [0x75] = HID_KEY_KEYPAD_8,
     [0x76] = HID_KEY_ESCAPE,
-    [0x77] = HID_KEY_SCROLL_LOCK,
+    [0x77] = HID_KEY_NUM_LOCK,
     [0x78] = HID_KEY_F11,
     [0x79] = HID_KEY_KEYPAD_ADD,
     [0x7A] = HID_KEY_KEYPAD_3,
     [0x7B] = HID_KEY_KEYPAD_SUBTRACT,
     [0x7C] = HID_KEY_KEYPAD_MULTIPLY,
     [0x7D] = HID_KEY_KEYPAD_9,
-    [0x7E] = HID_KEY_NUM_LOCK,
+    [0x7E] = HID_KEY_SCROLL_LOCK,
     
     // 0x80-0x8F
     [0x83] = HID_KEY_F7,
