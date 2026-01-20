@@ -37,29 +37,19 @@
 
 #define BTSTACK_FILE__ "hog_keyboard_demo.c"
 
-// *****************************************************************************
-/* EXAMPLE_START(hog_keyboard_demo): HID Keyboard LE
- */
-// *****************************************************************************
-
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <inttypes.h>
 
 #include "hog_keyboard_demo.h"
 
-#include "pico/time.h"
+#include "pico/stdlib.h"
+#include "pico/cyw43_arch.h"
 
 #include "btstack.h"
 
-#include "ble/gatt-service/battery_service_server.h"
-#include "ble/gatt-service/device_information_service_server.h"
-#include "ble/gatt-service/hids_device.h"
-
 #include "ps2kbd.h"
 #include "ps2.h"
+
 
 
 // from USB HID Specification 1.1, Appendix B.1
@@ -300,6 +290,7 @@ static void start_ps2_polling(void)
 static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
     UNUSED(channel);
     UNUSED(size);
+    bd_addr_t local_addr;
 
     if (packet_type != HCI_EVENT_PACKET) return;
 
@@ -341,6 +332,12 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
                     break;
             }
             break;
+
+        case BTSTACK_EVENT_STATE:
+            if (btstack_event_state_get_state(packet) != HCI_STATE_WORKING) return;
+            gap_local_bd_addr(local_addr);
+            printf("BTstack up and running on %s.\n", bd_addr_to_str(local_addr));
+            break;
             
         default:
             break;
@@ -348,13 +345,28 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 }
 
 
-int btstack_main(int argc, const char * argv[])
+
+
+// KBD data and clock inputs must be consecutive with
+// data in the lower position.
+#define DAT_GPIO 14 // PS/2 data
+//#define CLK_GPIO 15 // PS/2 clock (RSW: This is not used, kbd_init uses DAT_GPIO+1 for the clock)
+
+
+int main() 
 {
-    le_keyboard_setup();
+    stdio_init_all();
 
-    // turn on!
-    hci_power_control(HCI_POWER_ON);
+    kbd_init(1, DAT_GPIO);
 
-    return 0;
+    // initialize CYW43 driver architecture (will enable BT if/because CYW43_ENABLE_BLUETOOTH == 1)
+    if (cyw43_arch_init()) {
+        printf("failed to initialise cyw43_arch\n");
+        return -1;
+    }
+
+    le_keyboard_setup();               //Sets up packet_handler
+    hci_power_control(HCI_POWER_ON);   // turn on!
+
+    btstack_run_loop_execute();        //Does not return
 }
-/* EXAMPLE_END */

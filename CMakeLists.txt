@@ -26,8 +26,6 @@ add_subdirectory(ps2kbd-lib)
 add_executable(${PROJECT})
 target_sources(${PROJECT} PRIVATE
 	hog_keyboard_demo.c
-	picow_bt_example_common.c
-	picow_bt_example_background.c
 )
 
 # print memory usage, enable all warnings
