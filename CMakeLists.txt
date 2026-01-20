@@ -1,6 +1,6 @@
 # Modified CMakeLists.txt, copied from $/ble_usb_hid.git and modified
 
-set(PROJECT hog_keyboard_demo)
+set(PROJECT ps2_ble_kb)
 cmake_minimum_required(VERSION 3.13)
 
 # Uncomment next line for debug version
@@ -45,7 +45,7 @@ target_link_libraries(${PROJECT} PRIVATE
 	ps2kbd-lib
 )
 
-pico_btstack_make_gatt_header(hog_keyboard_demo PRIVATE "${CMAKE_CURRENT_LIST_DIR}/hog_keyboard_demo.gatt")
+pico_btstack_make_gatt_header(${PROJECT} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/hog_keyboard_demo.gatt")
 
 set_target_properties(${PROJECT} PROPERTIES OUTPUT_NAME "${PROJECT}")
 
