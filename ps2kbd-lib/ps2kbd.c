@@ -107,12 +107,8 @@ uint8_t __attribute__((noinline)) kbd_ready(void)
    uint8_t scancode = (dw >> SCANCODE_SHIFT) & 0xFF;  // Pull scancode byte out without start, partiy, and stop bits
 
    //Check scancode parity (PS/2 uses odd parity, i.e. 1 for even number of high bits)
-   int ctHigh = 0;
-   for (int x=7; x>=0; x--) {
-      if (scancode & 1<<x)
-         ctHigh++;
-   }
-   if ((bool)(ctHigh & 1) == (bool)(dw & PARITY_BIT)) {
+   bool bOddParity = !(__builtin_popcount(scancode) & 1);
+   if (bOddParity != (bool)(dw & PARITY_BIT)) {
       printf("PS/2 sync error, parity check failed\n");
       kbd_reset();
       ps2_clear_all_keys();   //Should maybe also dump all pressed keys?
@@ -201,14 +197,16 @@ static void kbd_write_byte(uint8_t c)
 
 
    //Clock should be high now, and start bit is on the data line
-   int ctParity=0;
+   //(already looping through the bits, so might as well count the high bits here
+   // rather than using the __builtin_popcount(byte) function)
+   int ctHigh=0;
    for (int x=0; x<8; x++) {
       kbd_write_bit(c & 1);
-      ctParity += c&1;
+      ctHigh += c&1;
       c >>= 1;                   //Next bit
    }
 
-   kbd_write_bit(ctParity^1);    //Send parity, 1 if even number of set bits, 0 if odd
+   kbd_write_bit(ctHigh^1);      //Send odd parity (1 if even number of set bits, 0 if odd)
    kbd_write_bit(1);             //Stop bit
 
    //Wait for clock rising edge (?)
