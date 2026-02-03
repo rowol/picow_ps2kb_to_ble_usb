@@ -2,8 +2,7 @@
 
 # Description
 
-This Raspberry Pi Pico W C SDK  project reads a PS/2 keyboard stream and converts the output to
-a BLE keyboard.   It uses a PIO state machine to read the PS/2 stream.
+This Raspberry Pi Pico W C SDK  project converts a PS/2 keyboard to a BLE keyboard.   It uses a PIO state machine to read the PS/2 stream.
 
 For development/testing I used:
 * Raspberry Pi Pico W
@@ -12,13 +11,21 @@ For development/testing I used:
 
 # <br>Build 
 
-Standard cmdline CMake build using the Pico C SDK.   I used [this Docker imager](https://github.com/lukstep/raspberry-pi-pico-docker-sdk)
-to make a container.  Later I manually installed the current/newer version of the C SDK.
+Built with [Raspberry Pi Pico C SDK 2.2.1](https://github.com/raspberrypi/pico-sdk).  It may work with other versions of the SDK 
+
+
+Standard cmdline CMake build using the Pico C SDK. (i.e. mkdir build; cd build; cmake ..; make)
+<br>Export PICO_SDK_PATH environment variable to point to your SDK.
+
+I used [this Docker image](https://github.com/lukstep/raspberry-pi-pico-docker-sdk)
+to make a container.  It contains an old version of the C SDK: I manually installed the current/newer version.
 
 
 # <br>Connections
 
 ![image](td_libs_PS2Keyboard_pins.jpg)
+
+<br>I built a simple adapter board to connect my PS/2 keyboard to the Pico W
 
 | PS/2 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | PICO W Pin &nbsp; &nbsp; &nbsp; | Pico Signal |
 | :----------- | :---------- | :-------|
@@ -28,13 +35,13 @@ to make a container.  Later I manually installed the current/newer version of th
 | GND  | 18 | GND, many other choices | 
 
 <br>I ran my keyboard off the 5V VBUS output from the Pico W, which is powered by the USB port.   It could
-be more robust to use an external 5V supply to run the Pico and keyboard, and possibly not all keyboards 
+be more robust to use an external 5V supply to run the Pico and keyboard: possibly not all keyboards 
 will work off VBUS.  Current limit is determined by the USB port, standard USB 2.0 is 500mA. 
 
 
-## Notes:
+# <br>Notes
 
-* Project built with [Raspberry Pi Pico C SDK 2.2.1](https://github.com/raspberrypi/pico-sdk).  It may work with other versions of the SDK 
+* Also writes the PS/2 stream (used to set the KB leds.)  Currently implemented as a quick hack with bit-banging, eventually I will use the PIO for this also.
 
 * Define NO_PS2_WRITES in ps2kbd-lib CMakeLists.txt to disable all PS/2 writes (these writes are necessary to set the kb led state.)
 
