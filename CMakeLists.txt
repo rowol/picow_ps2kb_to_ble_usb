@@ -24,7 +24,9 @@ pico_sdk_init()
 add_executable(${PROJECT})
 
 add_subdirectory(ps2kbd-lib)
-add_subdirectory(ble_device)
+# For testing, only use one of these two
+#add_subdirectory(ble_device)
+add_subdirectory(usb_device)
 
 
 # print memory usage, enable all warnings
