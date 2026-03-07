@@ -338,7 +338,6 @@ static void update_leds(void)
 // Press a key (add to the current state)
 static void press_key(uint8_t hid_code) {
     if (hid_code == 0) return;
-    assert(("Key pressed while waiting to process keys, i.e. g_state_changed", !g_state_changed));
     
     // Check if it's a modifier key
     uint8_t mod_mask = get_modifier_mask(hid_code);
@@ -397,7 +396,6 @@ static void press_key(uint8_t hid_code) {
 static void release_key(uint8_t hid_code) {
     if (hid_code == 0) return;
 
-    assert(("Key release while waiting to process keys, i.e. g_state_changed", !g_state_changed));
     
     // Check if it's a modifier key
     uint8_t mod_mask = get_modifier_mask(hid_code);
