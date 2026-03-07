@@ -1,11 +1,10 @@
 #
-# These are the specific top level files and build additions for a USB connected keyboard
+# These are the specific top level files and build additions for a PS/2 to USB connected keyboard
 # Note: CMake variables set in the parent dir are still in effect, etc
 #
 
 target_sources(${PROJECT} PRIVATE
   main.c
-  led.c
   usb_descriptors.c
 )
 
@@ -19,7 +18,6 @@ target_link_libraries(${PROJECT} PRIVATE
   pico_unique_id
   tinyusb_device
   tinyusb_board
-  pico_cyw43_arch_none   # we need Wifi to access LED GPIO, but we don't need anything else
 )
 
 # Uncomment this line to enable fix for Errata RP2040-E5 (the fix requires use of GPIO 15)
