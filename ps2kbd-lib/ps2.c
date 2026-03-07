@@ -161,7 +161,7 @@ static const uint8_t scancode_to_hid[256] = {
     [0x0C] = HID_KEY_F4,
     [0x0D] = HID_KEY_TAB,
     [0x0E] = HID_KEY_GRAVE,
-    
+
     // 0x10-0x1F
     [0x11] = 0xFF,  // Left Alt (handled as modifier)
     [0x12] = 0xFE,  // Left Shift (handled as modifier)
@@ -173,7 +173,7 @@ static const uint8_t scancode_to_hid[256] = {
     [0x1C] = HID_KEY_A,
     [0x1D] = HID_KEY_W,
     [0x1E] = HID_KEY_2,
-    
+
     // 0x20-0x2F
     [0x21] = HID_KEY_C,
     [0x22] = HID_KEY_X,
@@ -187,7 +187,7 @@ static const uint8_t scancode_to_hid[256] = {
     [0x2C] = HID_KEY_T,
     [0x2D] = HID_KEY_R,
     [0x2E] = HID_KEY_5,
-    
+
     // 0x30-0x3F
     [0x31] = HID_KEY_N,
     [0x32] = HID_KEY_B,
@@ -200,7 +200,7 @@ static const uint8_t scancode_to_hid[256] = {
     [0x3C] = HID_KEY_U,
     [0x3D] = HID_KEY_7,
     [0x3E] = HID_KEY_8,
-    
+
     // 0x40-0x4F
     [0x41] = HID_KEY_COMMA,
     [0x42] = HID_KEY_K,
@@ -214,7 +214,7 @@ static const uint8_t scancode_to_hid[256] = {
     [0x4C] = HID_KEY_SEMICOLON,
     [0x4D] = HID_KEY_P,
     [0x4E] = HID_KEY_MINUS,
-    
+
     // 0x50-0x5F
     [0x52] = HID_KEY_APOSTROPHE,
     [0x54] = HID_KEY_BRACKET_LEFT,
@@ -224,13 +224,13 @@ static const uint8_t scancode_to_hid[256] = {
     [0x5A] = HID_KEY_ENTER,
     [0x5B] = HID_KEY_BRACKET_RIGHT,
     [0x5D] = HID_KEY_BACKSLASH,
-    
+
     // 0x60-0x6F
     [0x66] = HID_KEY_BACKSPACE,
     [0x69] = HID_KEY_KEYPAD_1,
     [0x6B] = HID_KEY_KEYPAD_4,
     [0x6C] = HID_KEY_KEYPAD_7,
-    
+
     // 0x70-0x7F
     [0x70] = HID_KEY_KEYPAD_0,
     [0x71] = HID_KEY_KEYPAD_DECIMAL,
@@ -247,23 +247,23 @@ static const uint8_t scancode_to_hid[256] = {
     [0x7C] = HID_KEY_KEYPAD_MULTIPLY,
     [0x7D] = HID_KEY_KEYPAD_9,
     [0x7E] = HID_KEY_SCROLL_LOCK,
-    
+
     // 0x80-0x8F
     [0x83] = HID_KEY_F7,
 };
 
 // PS/2 Set 2 Extended scancodes (prefixed with 0xE0) -> HID Keycode
 static const uint8_t extended_scancode_to_hid[256] = {
-    [0x11] = 0xFA,  // Right Alt (handled as modifier)
-    [0x14] = 0xF9,  // Right Ctrl (handled as modifier)
-    [0x1F] = 0xF8,  // Left GUI (handled as modifier)
-    [0x27] = 0xF7,  // Right GUI (handled as modifier)
+    [0x11] = 0xFA,                 // Right Alt (handled as modifier)
+    [0x14] = 0xF9,                 // Right Ctrl (handled as modifier)
+    [0x1F] = 0xF8,                 // Left GUI (handled as modifier)
+    [0x27] = 0xF7,                 // Right GUI (handled as modifier)
     [0x2F] = HID_KEY_APPLICATION,  // Menu/Context key
-    
+
     // Numpad extended
     [0x4A] = HID_KEY_KEYPAD_DIVIDE,
     [0x5A] = HID_KEY_KEYPAD_ENTER,
-    
+
     // Navigation cluster
     [0x69] = HID_KEY_END,
     [0x6B] = HID_KEY_ARROW_LEFT,
@@ -302,28 +302,29 @@ static bool g_scroll_lock_led = false;
 
 // Check if a keycode is a modifier and return its bit mask
 // Returns 0 if not a modifier
-static uint8_t get_modifier_mask(uint8_t hid_code) {
-    switch (hid_code) {
-        case 0xFF: return HID_MOD_LEFT_ALT;     // PS/2 0x11
-        case 0xFE: return HID_MOD_LEFT_SHIFT;   // PS/2 0x12
-        case 0xFD: return HID_MOD_LEFT_CTRL;    // PS/2 0x14
-        case 0xFC: return 0;                     // Caps Lock - not a modifier
-        case 0xFB: return HID_MOD_RIGHT_SHIFT;  // PS/2 0x59
-        case 0xFA: return HID_MOD_RIGHT_ALT;    // PS/2 E0 11
-        case 0xF9: return HID_MOD_RIGHT_CTRL;   // PS/2 E0 14
-        case 0xF8: return HID_MOD_LEFT_GUI;     // PS/2 E0 1F
-        case 0xF7: return HID_MOD_RIGHT_GUI;    // PS/2 E0 27
-        default:   return 0;
-    }
+static uint8_t get_modifier_mask(uint8_t hid_code) 
+{
+   switch (hid_code) {
+      case 0xFF: return HID_MOD_LEFT_ALT;     // PS/2 0x11
+      case 0xFE: return HID_MOD_LEFT_SHIFT;   // PS/2 0x12
+      case 0xFD: return HID_MOD_LEFT_CTRL;    // PS/2 0x14
+      case 0xFC: return 0;                     // Caps Lock - not a modifier
+      case 0xFB: return HID_MOD_RIGHT_SHIFT;  // PS/2 0x59
+      case 0xFA: return HID_MOD_RIGHT_ALT;    // PS/2 E0 11
+      case 0xF9: return HID_MOD_RIGHT_CTRL;   // PS/2 E0 14
+      case 0xF8: return HID_MOD_LEFT_GUI;     // PS/2 E0 1F
+      case 0xF7: return HID_MOD_RIGHT_GUI;    // PS/2 E0 27
+      default:   return 0;
+   }
 }
 
 
 //Call this if people are mashing the keyboard and you're getting out of sync with what's pressed.
 //The caps lock is set locally by the keyboard, so that may still be set...
-void ps2_clear_all_keys(void)
+void ps2_clear_all_keys(void) 
 {
    memset(g_keys, 0, sizeof(g_keys));
-   g_modifiers = 0;        //Not sure if need to do this?  
+   g_modifiers = 0;  // Not sure if need to do this?
    g_state_changed = true;
 }
 
@@ -336,114 +337,125 @@ static void update_leds(void)
 
 
 // Press a key (add to the current state)
-static void press_key(uint8_t hid_code) {
-    if (hid_code == 0) return;
-    
-    // Check if it's a modifier key
-    uint8_t mod_mask = get_modifier_mask(hid_code);
-    if (mod_mask != 0) {
-        if (!(g_modifiers & mod_mask)) {
-            g_modifiers |= mod_mask;
-            g_state_changed = true;
-        }
-        return;
-    }
-    
+static void press_key(uint8_t hid_code) 
+{
+   if (hid_code == 0)
+      return;
 
-    // BLE host does not reliably send output report when keyboard leds should change,
-    // so instead I am syncing them locally
-
-    // Handle Caps Lock specially (it's a toggle, but we just send press/release)
-    if (hid_code == 0xFC) {
-        hid_code = HID_KEY_CAPS_LOCK;
-        g_caps_lock_led = !g_caps_lock_led;     //Locally sync keyboard leds
-        update_leds(); 
-    }
-
-    //Check for NUM lock, to locally sync keyboard leds
-    if (hid_code == HID_KEY_NUM_LOCK) {
-        g_num_lock_led = !g_num_lock_led;   
-        update_leds(); 
-    }
-
-    //Check for SCROLL lock, to locally sync keyboard leds
-    if (hid_code == HID_KEY_SCROLL_LOCK) {
-        g_scroll_lock_led = !g_scroll_lock_led; 
-        update_leds(); 
-    }
+   // Check if it's a modifier key
+   uint8_t mod_mask = get_modifier_mask(hid_code);
+   if (mod_mask != 0) {
+      if (!(g_modifiers & mod_mask)) {
+         g_modifiers |= mod_mask;
+         g_state_changed = true;
+      }
+      return;
+   }
 
 
-    // Check if already pressed
-    for (int i = 0; i < array_count(g_keys); i++) {
-        if (g_keys[i] == hid_code) return; // Already pressed
-    }
-    
-    // Find empty slot and add
-    for (int i = 0; i < array_count(g_keys); i++) {
-        if (g_keys[i] == 0) {
-            g_keys[i] = hid_code;
-            g_state_changed = true;
-            return;
-        }
-    }
-    // No empty slot - 6 keys already pressed (rollover)
-    printf("Pressing more than 6 keys, clearing all\n"); 
-    ps2_clear_all_keys();
-    g_state_changed = true;
+   // BLE host does not reliably send output report when keyboard leds should change,
+   // so instead I am syncing them locally
+
+   // Handle Caps Lock specially (it's a toggle, but we just send press/release)
+   if (hid_code == 0xFC) {
+      hid_code = HID_KEY_CAPS_LOCK;
+      g_caps_lock_led = !g_caps_lock_led;  // Locally sync keyboard leds
+      update_leds();
+   }
+
+   // Check for NUM lock, to locally sync keyboard leds
+   if (hid_code == HID_KEY_NUM_LOCK) {
+      g_num_lock_led = !g_num_lock_led;
+      update_leds();
+   }
+
+   // Check for SCROLL lock, to locally sync keyboard leds
+   if (hid_code == HID_KEY_SCROLL_LOCK) {
+      g_scroll_lock_led = !g_scroll_lock_led;
+      update_leds();
+   }
+
+
+   // Check if already pressed
+   for (int i = 0; i < array_count(g_keys); i++) {
+      if (g_keys[i] == hid_code) return;  // Already pressed
+   }
+
+   // Find empty slot and add
+   for (int i = 0; i < array_count(g_keys); i++) {
+      if (g_keys[i] == 0) {
+         g_keys[i] = hid_code;
+         g_state_changed = true;
+         return;
+      }
+   }
+   // No empty slot - 6 keys already pressed (rollover)
+   printf("Pressing more than 6 keys, clearing all\n");
+   ps2_clear_all_keys();
+   g_state_changed = true;
 }
+
+
 
 // Release a key (remove from the current state)
-static void release_key(uint8_t hid_code) {
-    if (hid_code == 0) return;
+static void release_key(uint8_t hid_code) 
+{
+   if (hid_code == 0) 
+      return;
 
-    
-    // Check if it's a modifier key
-    uint8_t mod_mask = get_modifier_mask(hid_code);
-    if (mod_mask != 0) {
-        if (g_modifiers & mod_mask) {
-            g_modifiers &= ~mod_mask;
-            g_state_changed = true;
-        }
-        return;
-    }
-    
-    // Handle Caps Lock specially
-    if (hid_code == 0xFC) {
-        hid_code = HID_KEY_CAPS_LOCK;
-    }
-    
-    // Find and remove from keys array
-    for (int i = 0; i < array_count(g_keys); i++) {
-        if (g_keys[i] == hid_code) {
-            g_keys[i] = 0;
-            g_state_changed = true;
-            return;
-        }
-    }
-    printf("Release non-pressed key, removing all\n"); 
-    ps2_clear_all_keys();
+
+   // Check if it's a modifier key
+   uint8_t mod_mask = get_modifier_mask(hid_code);
+   if (mod_mask != 0) {
+      if (g_modifiers & mod_mask) {
+         g_modifiers &= ~mod_mask;
+         g_state_changed = true;
+      }
+      return;
+   }
+
+   // Handle Caps Lock specially
+   if (hid_code == 0xFC) {
+      hid_code = HID_KEY_CAPS_LOCK;
+   }
+
+   // Find and remove from keys array
+   for (int i = 0; i < array_count(g_keys); i++) {
+      if (g_keys[i] == hid_code) {
+         g_keys[i] = 0;
+         g_state_changed = true;
+         return;
+      }
+   }
+   printf("Release non-pressed key, removing all\n");
+   ps2_clear_all_keys();
 }
 
+
+
 // Handle a complete PS/2 scancode
-static void handle_scancode(uint8_t code, bool is_break, bool is_extended) {
-    uint8_t hid_code;
-    
-    if (is_extended) {
-        hid_code = extended_scancode_to_hid[code];
-    } else {
-        hid_code = scancode_to_hid[code];
-    }
-    
-    if (hid_code == 0) {
-        // Unknown scancode - ignore
-        return;
-    }
-    
-    if (is_break) {
-        release_key(hid_code);
-    } else {
-        press_key(hid_code);
-    }
+static void handle_scancode(uint8_t code, bool is_break, bool is_extended)
+{
+   uint8_t hid_code;
+
+   if (is_extended) {
+      hid_code = extended_scancode_to_hid[code];
+   }
+   else {
+      hid_code = scancode_to_hid[code];
+   }
+
+   if (hid_code == 0) {
+      // Unknown scancode - ignore
+      return;
+   }
+
+   if (is_break) {
+      release_key(hid_code);
+   }
+   else {
+      press_key(hid_code);
+   }
 }
 
 //--------------------------------------------------------------------+
