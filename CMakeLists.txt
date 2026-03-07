@@ -21,12 +21,11 @@ project(${PROJECT} C CXX ASM)
 
 pico_sdk_init()
 
-add_subdirectory(ps2kbd-lib)
-
 add_executable(${PROJECT})
-target_sources(${PROJECT} PRIVATE
-	hog_keyboard_demo.c
-)
+
+add_subdirectory(ps2kbd-lib)
+add_subdirectory(ble_device)
+
 
 # print memory usage, enable all warnings
 target_compile_options(${PROJECT} PRIVATE ) #-Wall -Wextra
@@ -36,14 +35,9 @@ target_link_options(${PROJECT} PRIVATE -Xlinker --print-memory-usage)
 target_include_directories(${PROJECT} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(${PROJECT} PRIVATE
-	pico_btstack_ble
-	pico_btstack_cyw43
-	pico_cyw43_arch_none
 	pico_stdlib
 	ps2kbd-lib
 )
-
-pico_btstack_make_gatt_header(${PROJECT} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/hog_keyboard_demo.gatt")
 
 set_target_properties(${PROJECT} PROPERTIES OUTPUT_NAME "${PROJECT}")
 
