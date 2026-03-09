@@ -2,11 +2,15 @@
 
 # Description
 
-This Raspberry Pi Pico W C SDK  project converts a PS/2 keyboard to a BLE keyboard.   It uses a PIO state machine to read the PS/2 stream.
+This Raspberry Pi Pico W C SDK  project converts a PS/2 keyboard to either a BLE or a USB keyboard.   It uses a PIO state machine to read the PS/2 stream.
 
-For development/testing I used:
+<br>For development I used:
 * Raspberry Pi Pico W
 * Microsoft Natural Keyboard Elite keyboard (KU-0045, "white speedbump")
+
+<br>For testing:
+* Checked BLE bridge function with an Android phone
+* Checked USB bridge function with a Linux laptop.
 
 
 # <br>Build 
@@ -19,6 +23,27 @@ Standard cmdline CMake build using the Pico C SDK. (i.e. mkdir build; cd build; 
 
 I used [this Docker image](https://github.com/lukstep/raspberry-pi-pico-docker-sdk)
 to make a container.  It contains an old version of the C SDK: I manually installed the current/newer version.
+
+## Configuring the Build
+
+<br>Edit the top level CMakeLists.txt file: 
+* Choose between code for a BLE or USB keyboard bridge by setting the DEVICE_TYPE variable
+
+**TBD  
+Also need to be able to move the PS/2 DATA and CLK pins  
+Move NO_PS2_WRITES in ps2kbd-lib to top CMakeLists.txt also**
+
+
+## First time Build 
+($ is the top level of your repository clone)
+
+    cd $
+    mkdir build
+    cd build
+    cmake ..
+    make
+
+Any time you change the configuration in the CMakeLists.txt, you should rm -rf the build directory, then rerun the cmake .. and make
 
 
 # <br>Connections
@@ -41,9 +66,9 @@ will work off VBUS.  Current limit is determined by the USB port, standard USB 2
 
 # <br>Notes
 
-* Also writes the PS/2 stream (used to set the KB leds.)  Currently implemented as a quick hack with bit-banging, eventually I will use the PIO for this also.
+* PS/2 library also writes the PS/2 stream (used to set the KB leds.)  Currently implemented as a quick hack with bit-banging, eventually I will use the PIO for this also.
 
-* Define NO_PS2_WRITES in ps2kbd-lib CMakeLists.txt to disable all PS/2 writes (these writes are necessary to set the kb led state.)
+* Define NO_PS2_WRITES in ps2kbd-lib CMakeLists.txt to disable all PS/2 writes and turn off the keyboard status LEDS
 
 
 
@@ -52,8 +77,9 @@ will work off VBUS.  Current limit is determined by the USB port, standard USB 2
 This project uses modified code from several repositories, as well as original code:
 
 * [PS/2 to USB HID Keyboard Bridge for Raspberry Pi Pico 2](https://github.com/CCappsDevelopment/pico-ps2-usb-kbd-bridge) 
-  Used  key scancode to USB HID code translation.  
-  (BLE GATT uses the same HID codes as USB)
+  Used  key scancode to USB HID code translation in BLE device. (BLE GATT uses the same HID codes as USB)   Also used 
+  the USB descriptors, tiny USB config and USB main from this sample
+  in the USB bridge version
   
 * [BTStack HID Keyboard example](https://github.com/bluekitchen/btstack/blob/master/example/hid_keyboard_demo.c) 
   Used HID over GATT BLE code  
