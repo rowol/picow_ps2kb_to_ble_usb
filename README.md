@@ -18,32 +18,40 @@ This Raspberry Pi Pico W C SDK  project converts a PS/2 keyboard to either a BLE
 Built with [Raspberry Pi Pico C SDK 2.2.1](https://github.com/raspberrypi/pico-sdk).  It may work with other versions of the SDK 
 
 
-Standard cmdline CMake build using the Pico C SDK. (i.e. mkdir build; cd build; cmake ..; make)
+Standard cmdline CMake build using the Pico C SDK. 
 <br>Export PICO_SDK_PATH environment variable to point to your SDK.
 
 I used [this Docker image](https://github.com/lukstep/raspberry-pi-pico-docker-sdk)
 to make a container.  It contains an old version of the C SDK: I manually installed the current/newer version.
 
-## Configuring the Build
+<br>**Configuring the Build**
 
-<br>Edit the top level CMakeLists.txt file: 
-* Choose between code for a BLE or USB keyboard bridge by setting the DEVICE_TYPE variable
+* To select between a BLE or USB keyboard, set the DEVICE_TYPE variable in the top level CMakeLists.txt  
+(defaults to BLE)
+* To change which PIO or which GPIOs the PS/2 keyboard interface uses, edit the ps2kbd-lib/ps2kbd.c file constant defintions  
+(defaults to PIO=1, KB_DAT_GPIO=14, KB_CLK_GPIO=15)
+* **TBD: Move NO_PS2_WRITES in ps2kbd-lib to top CMakeLists.txt also**  
+(Define NO_PS2_WRITES in ps2kbd-lib CMakeLists.txt to disable all PS/2 writes and turn off the keyboard status LEDS)
 
-**TBD  
-Also need to be able to move the PS/2 DATA and CLK pins  
-Move NO_PS2_WRITES in ps2kbd-lib to top CMakeLists.txt also**
-
-
-## First time Build 
+<br>**Any time you change the configuration in the CMakeLists.txt, you should run:**  
 ($ is the top level of your repository clone)
 
     cd $
-    mkdir build
-    cd build
+    rm -rf build
+    mkdir build; cd build
     cmake ..
     make
 
-Any time you change the configuration in the CMakeLists.txt, you should rm -rf the build directory, then rerun the cmake .. and make
+
+
+
+<br>**First time Build**  
+($ is the top level of your repository clone)
+
+    cd $
+    mkdir build; cd build
+    cmake ..
+    make
 
 
 # <br>Connections
@@ -68,7 +76,6 @@ will work off VBUS.  Current limit is determined by the USB port, standard USB 2
 
 * PS/2 library also writes the PS/2 stream (used to set the KB leds.)  Currently implemented as a quick hack with bit-banging, eventually I will use the PIO for this also.
 
-* Define NO_PS2_WRITES in ps2kbd-lib CMakeLists.txt to disable all PS/2 writes and turn off the keyboard status LEDS
 
 
 

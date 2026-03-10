@@ -148,15 +148,10 @@ void tud_hid_set_report_cb(uint8_t /*instance*/, uint8_t /*report_id*/, hid_repo
 
 
 
-// KBD data and clock inputs must be consecutive with
-// data in the lower position.
-#define DAT_GPIO 14  // PS/2 data
-// #define CLK_GPIO 15 // PS/2 clock (RSW: This is not used, kbd_init uses DAT_GPIO+1 for the clock)
-
 int main(void) 
 {
    stdio_init_all();
-   kbd_init(1, DAT_GPIO);
+   kbd_init();
 
    tud_init(BOARD_TUD_RHPORT);  // init device stack on configured roothub port
 

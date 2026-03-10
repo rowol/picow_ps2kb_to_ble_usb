@@ -17,14 +17,27 @@
 #include "pico/time.h"
 
 
+
+//keyboard suport pio number. pio0 or pio1
+#define KB_PIO pio1
+
+// KBD data and clock inputs, must be consecutive with data in the lower position.
+// GPIO number of data pin, clk pin must be on next adjacent GPIO
+#define KB_DAT_GPIO 14 // PS/2 data
+//#define CLK_GPIO 15  // PS/2 clock (RSW: This is not used, kbd_init uses DAT_GPIO+1 for the clock)
+
+
+
 static PIO kbd_pio;         // pio0 or pio1
 static uint kbd_sm;         // pio state machine index
 static uint base_gpio;      // data signal gpio #
 
-void kbd_init(uint8_t pio, uint8_t gpio)
+
+
+void kbd_init(void)
 {
-   kbd_pio = pio ? pio1 : pio0;
-   base_gpio = gpio;  // base_gpio is data signal, base_gpio+1 is clock signal
+   kbd_pio = KB_PIO;
+   base_gpio = KB_DAT_GPIO;   // base_gpio is data signal, base_gpio+1 is clock signal
    // init KBD pins to input
    gpio_init(base_gpio);
    gpio_init(base_gpio + 1);

@@ -346,18 +346,11 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 
 
 
-
-// KBD data and clock inputs must be consecutive with
-// data in the lower position.
-#define DAT_GPIO 14 // PS/2 data
-//#define CLK_GPIO 15 // PS/2 clock (RSW: This is not used, kbd_init uses DAT_GPIO+1 for the clock)
-
-
 int main() 
 {
     stdio_init_all();
 
-    kbd_init(1, DAT_GPIO);
+    kbd_init();
 
     // initialize CYW43 driver architecture (will enable BT if/because CYW43_ENABLE_BLUETOOTH == 1)
     if (cyw43_arch_init()) {

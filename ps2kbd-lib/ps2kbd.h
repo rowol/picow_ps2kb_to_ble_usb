@@ -12,12 +12,7 @@ extern "C" {
 #endif
 
 // Initialize PS/2 keyboard support
-// Parameters
-//     pio  - keyboard suport pio number. 0 or 1
-//     gpio - GPIO number of data pin, ctl pin must be on next
-//            adjacent GPIO
-// Returns  - none
-void kbd_init(uint8_t pio, uint8_t gpio);
+void kbd_init(void);
 
 // Return keyboard status
 // Parameters - none
