@@ -462,20 +462,20 @@ static void handle_scancode(uint8_t code, bool is_break, bool is_extended)
 // Public Interface
 //--------------------------------------------------------------------+
 
-void ps2_init(void) 
+void ps2_init(void)
 {
-    // Initialize state
-    break_pending = false;
-    extended_pending = false;
-    
-    g_modifiers = 0;
-    memset(g_keys, 0, sizeof(g_keys));
-    g_state_changed = false;
+   // Initialize state
+   break_pending = false;
+   extended_pending = false;
 
-    g_caps_lock_led = false;            // Start with all leds off (since these are set locally, 
-    g_num_lock_led = false;             // I'm assuming that's how host initializes them)
-    g_scroll_lock_led = false;          
-    update_leds();
+   g_modifiers = 0;
+   memset(g_keys, 0, sizeof(g_keys));
+   g_state_changed = false;
+
+   g_caps_lock_led = false;  // Start with all leds off (since these are set locally,
+   g_num_lock_led = false;   // I'm assuming that's how host initializes them)
+   g_scroll_lock_led = false;
+   update_leds();
 }
 
 

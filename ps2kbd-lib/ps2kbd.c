@@ -21,48 +21,48 @@ static PIO kbd_pio;         // pio0 or pio1
 static uint kbd_sm;         // pio state machine index
 static uint base_gpio;      // data signal gpio #
 
-void kbd_init(uint8_t pio, uint8_t gpio) 
+void kbd_init(uint8_t pio, uint8_t gpio)
 {
-    kbd_pio = pio ? pio1 : pio0;
-    base_gpio = gpio; // base_gpio is data signal, base_gpio+1 is clock signal
-    // init KBD pins to input
-    gpio_init(base_gpio);
-    gpio_init(base_gpio + 1);
-    // with pull up
-    gpio_pull_up(base_gpio);
-    gpio_pull_up(base_gpio + 1);
-    // get a state machine
-    kbd_sm = pio_claim_unused_sm(kbd_pio, true);
-    // reserve program space in SM memory
-    uint offset = pio_add_program(kbd_pio, &ps2kbd_program);
-    // Set pin directions base
-    pio_sm_set_consecutive_pindirs(kbd_pio, kbd_sm, base_gpio, 2, false);
-    // program the start and wrap SM registers
-    pio_sm_config c = ps2kbd_program_get_default_config(offset);
-    // Set the base input pin. pin index 0 is DAT, index 1 is CLK
-    sm_config_set_in_pins(&c, base_gpio);
-    // Shift 8 bits to the right, autopush enabled
-    sm_config_set_in_shift(&c, true, true, 1+8+1+1);  //Include start, 8 data, parity, and stop bits
+   kbd_pio = pio ? pio1 : pio0;
+   base_gpio = gpio;  // base_gpio is data signal, base_gpio+1 is clock signal
+   // init KBD pins to input
+   gpio_init(base_gpio);
+   gpio_init(base_gpio + 1);
+   // with pull up
+   gpio_pull_up(base_gpio);
+   gpio_pull_up(base_gpio + 1);
+   // get a state machine
+   kbd_sm = pio_claim_unused_sm(kbd_pio, true);
+   // reserve program space in SM memory
+   uint offset = pio_add_program(kbd_pio, &ps2kbd_program);
+   // Set pin directions base
+   pio_sm_set_consecutive_pindirs(kbd_pio, kbd_sm, base_gpio, 2, false);
+   // program the start and wrap SM registers
+   pio_sm_config c = ps2kbd_program_get_default_config(offset);
+   // Set the base input pin. pin index 0 is DAT, index 1 is CLK
+   sm_config_set_in_pins(&c, base_gpio);
+   // Shift 8 bits to the right, autopush enabled
+   sm_config_set_in_shift(&c, true, true, 1 + 8 + 1 + 1);  // Include start, 8 data, parity, and stop bits
 
-    //RSW set up pin to use for jumps 
-    // Crucially, configure which specific pin the JMP PIN instruction will read
-    // (All pins are visible to PIO input logic, shouldn't need to pio_gpio_init or gpio_set_dir on the pin)
-    sm_config_set_jmp_pin(&c, base_gpio);   //Use the data pin for "jmp pin" tests 
-    //pio_gpio_init(kbd_pio, base_gpio);
-    //gpio_set_dir(base_gpio, GPIO_IN);
+   // RSW set up pin to use for jumps
+   //  Crucially, configure which specific pin the JMP PIN instruction will read
+   //  (All pins are visible to PIO input logic, shouldn't need to pio_gpio_init or gpio_set_dir on the pin)
+   sm_config_set_jmp_pin(&c, base_gpio);  // Use the data pin for "jmp pin" tests
+   // pio_gpio_init(kbd_pio, base_gpio);
+   // gpio_set_dir(base_gpio, GPIO_IN);
 
-    // Deeper FIFO as we're not doing any TX
-    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
-    // We don't expect clock faster than 16.7KHz and want no less
-    // than 8 SM cycles per keyboard clock.
-    float div = (float)clock_get_hz(clk_sys) / (8 * 16700);
-    sm_config_set_clkdiv(&c, div);
-    // Ready to go
-    pio_sm_init(kbd_pio, kbd_sm, offset, &c);
-    pio_sm_set_enabled(kbd_pio, kbd_sm, true);
+   // Deeper FIFO as we're not doing any TX
+   sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+   // We don't expect clock faster than 16.7KHz and want no less
+   // than 8 SM cycles per keyboard clock.
+   float div = (float)clock_get_hz(clk_sys) / (8 * 16700);
+   sm_config_set_clkdiv(&c, div);
+   // Ready to go
+   pio_sm_init(kbd_pio, kbd_sm, offset, &c);
+   pio_sm_set_enabled(kbd_pio, kbd_sm, true);
 
-    //Initialize the ps2.c/scan code conversion module
-    ps2_init();
+   // Initialize the ps2.c/scan code conversion module
+   ps2_init();
 }
 
 
@@ -120,12 +120,12 @@ uint8_t __attribute__((noinline)) kbd_ready(void)
 
 
 
-uint8_t kbd_getc(void) 
+uint8_t kbd_getc(void)
 {
-    uint8_t c;
-    while (!(c = kbd_ready()))
-        tight_loop_contents();      //RSW, not sure this is needed (?)
-    return c;
+   uint8_t c;
+   while (!(c = kbd_ready()))
+      tight_loop_contents();  // RSW, not sure this is needed (?)
+   return c;
 }
 
 
